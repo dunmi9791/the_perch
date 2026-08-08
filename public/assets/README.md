@@ -6,12 +6,12 @@ site runs without them, it just shows placeholders.
 
 | File | Used by |
 | --- | --- |
-| `perch-logo.jpeg` | header, footer, favicon (falls back to a "The Perch" wordmark) |
+| `logo.jpeg` | header, footer, favicon (falls back to a "The Perch" wordmark) — ✅ present |
 | `hornbill-main.png` | Hornbill apartment card, listing row, detail hero |
 | `gallery-hornbill-2.png` | Gallery → Bedrooms |
 | `gallery-hornbill-3.png` | Gallery → Bedrooms |
 
-All four live in the Claude Design project this app was built from
+The three still missing live in the Claude Design project this app was built from
 (`assets/` folder of "New UI mockups"). They could not be pulled down
 automatically: the design API caps file reads at 256 KiB and these exceed it,
 so they need to be copied across by hand.

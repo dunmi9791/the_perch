@@ -8,7 +8,7 @@ interface Props {
 }
 
 /**
- * Falls back to a wordmark if `perch-logo.jpeg` hasn't been dropped into
+ * Falls back to a wordmark if `logo.jpeg` hasn't been dropped into
  * `public/assets/` yet, so the header never renders a broken image.
  */
 export function Logo({ height, onDark = false }: Props) {
@@ -34,7 +34,7 @@ export function Logo({ height, onDark = false }: Props) {
 
   return (
     <img
-      src="/assets/perch-logo.jpeg"
+      src="/assets/logo.jpeg"
       alt="The Perch"
       onError={() => setFailed(true)}
       style={{
