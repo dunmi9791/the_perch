@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#1F3A4D;text-decoration:none}
+  a:hover{color:#B8934F}
+  input[type="date"]{font-family:'Inter',sans-serif}
+  ::selection{background:#B8934F;color:#fff}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#FFFFFF;display:flex;flex-direction:column;color:#1F3A4D">
+
+<!-- HEADER -->
+<header style="position:sticky;top:0;z-index:50;background:rgba(255,255,255,0.97);backdrop-filter:blur(6px);border-bottom:1px solid rgba(31,58,77,0.08)">
+  <div style="max-width:1280px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onClick="{{ navHome }}">
+      <img src="./assets/perch-logo.jpeg" alt="The Perch" style="height:46px;width:auto;object-fit:contain"/>
+    </div>
+    <nav style="display:none;align-items:center;gap:28px" data-desktop-nav="1">
+      <a onClick="{{ navHome }}" style="font-size:14px;font-weight:500;cursor:pointer;color:{{ navHomeColor }}">Home</a>
+      <a onClick="{{ navApartments }}" style="font-size:14px;font-weight:500;cursor:pointer;color:{{ navApartmentsColor }}">Apartments</a>
+      <a onClick="{{ navAvailability }}" style="font-size:14px;font-weight:500;cursor:pointer;color:{{ navAvailabilityColor }}">Availability</a>
+      <a onClick="{{ navGallery }}" style="font-size:14px;font-weight:500;cursor:pointer;color:{{ navGalleryColor }}">Gallery</a>
+      <a onClick="{{ navAbout }}" style="font-size:14px;font-weight:500;cursor:pointer;color:{{ navAboutColor }}">About Us</a>
+      <a onClick="{{ navContact }}" style="font-size:14px;font-weight:500;cursor:pointer;color:{{ navContactColor }}">Contact</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:10px">
+      <a href="tel:07073318012" style="display:none;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#1F3A4D" data-desktop-only="1">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8934F" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        0707 331 8012
+      </a>
+      <a href="{{ waLink }}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:#EAF1E8" title="Chat on WhatsApp">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#5C7A52"><path d="M12.04 2c-5.5 0-10 4.5-10 10 0 1.77.46 3.43 1.27 4.87L2 22l5.3-1.39a9.9 9.9 0 0 0 4.74 1.2h.01c5.5 0 10-4.5 10-10s-4.5-9.81-10.01-9.81zm5.83 14.13c-.24.68-1.42 1.3-1.96 1.38-.5.08-1.14.11-1.83-.11-.42-.14-.96-.32-1.65-.62-2.9-1.25-4.79-4.17-4.93-4.36-.14-.19-1.18-1.57-1.18-2.99 0-1.42.74-2.11 1-2.4.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 1.99.88 2.14.07.14.12.31.02.5-.1.19-.15.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.29-.13.57.17.29.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.14.47.12.65-.07.18-.19.75-.87.95-1.17.2-.29.4-.24.67-.14.28.1 1.77.83 2.08 .98.3.14.5.22.58.34.07.13.07.72-.17 1.4z"/></svg>
+      </a>
+      <button onClick="{{ navBooking }}" style="background:#1F3A4D;color:#F8F3EA;border:none;padding:11px 22px;border-radius:4px;font-size:13px;font-weight:600;letter-spacing:0.02em;cursor:pointer">Book Your Stay</button>
+      <button onClick="{{ toggleMobileMenu }}" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:none;border:1px solid rgba(31,58,77,0.15);border-radius:4px;cursor:pointer" data-mobile-only="1">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F3A4D" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+  <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:8px 24px 20px;display:flex;flex-direction:column;gap:14px;border-top:1px solid rgba(31,58,77,0.08)">
+      <a onClick="{{ navHome }}" style="font-size:15px;font-weight:500;cursor:pointer">Home</a>
+      <a onClick="{{ navApartments }}" style="font-size:15px;font-weight:500;cursor:pointer">Apartments</a>
+      <a onClick="{{ navAvailability }}" style="font-size:15px;font-weight:500;cursor:pointer">Availability</a>
+      <a onClick="{{ navGallery }}" style="font-size:15px;font-weight:500;cursor:pointer">Gallery</a>
+      <a onClick="{{ navAbout }}" style="font-size:15px;font-weight:500;cursor:pointer">About Us</a>
+      <a onClick="{{ navContact }}" style="font-size:15px;font-weight:500;cursor:pointer">Contact</a>
+      <a href="tel:07073318012" style="font-size:15px;font-weight:600;color:#B8934F">Call 0707 331 8012</a>
+    </div>
+  </sc-if>
+</header>
+
+<main style="flex:1">
+
+<!-- ============ HOME ============ -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Home">
+  <!-- HERO -->
+  <section style="position:relative;min-height:640px;display:flex;align-items:center;background:#1F3A4D">
+    <div style="position:absolute;inset:0;opacity:0.55">
+      <image-slot id="hero-main" shape="rect" placeholder="Drop hero photo of The Perch exterior or living room"></image-slot>
+    </div>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(31,58,77,0.55) 0%,rgba(31,58,77,0.75) 100%)"></div>
+    <div style="position:relative;max-width:1280px;margin:0 auto;padding:100px 24px 60px;width:100%">
+      <p style="color:#B8934F;font-size:13px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 16px;animation:fadeUp 0.6s ease">Slice of Paradise · Lugbe, Abuja</p>
+      <h1 style="font-family:'Playfair Display',serif;color:#fff;font-size:clamp(34px,5.5vw,60px);line-height:1.1;margin:0 0 18px;max-width:720px;font-weight:600;animation:fadeUp 0.7s ease">Your Slice of Paradise in Abuja</h1>
+      <p style="color:#F0EBE0;font-size:17px;line-height:1.6;max-width:560px;margin:0 0 40px;animation:fadeUp 0.8s ease">Experience comfort, privacy and thoughtful hospitality at The Perch, located in the peaceful River Park Estate, Lugbe, Abuja.</p>
+
+      <div style="background:#fff;border-radius:8px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.25);display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;max-width:920px">
+        <div style="flex:1;min-width:150px">
+          <label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Check-in</label>
+          <input type="date" value="{{ avail.checkIn }}" onChange="{{ setAvailCheckIn }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px;color:#1F3A4D"/>
+        </div>
+        <div style="flex:1;min-width:150px">
+          <label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Check-out</label>
+          <input type="date" value="{{ avail.checkOut }}" onChange="{{ setAvailCheckOut }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px;color:#1F3A4D"/>
+        </div>
+        <div style="flex:0.6;min-width:110px">
+          <label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Guests</label>
+          <select value="{{ avail.guests }}" onChange="{{ setAvailGuests }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px;color:#1F3A4D">
+            <option value="1">1 Guest</option>
+            <option value="2">2 Guests</option>
+            <option value="3">3 Guests</option>
+            <option value="4">4 Guests</option>
+            <option value="5">5 Guests</option>
+            <option value="6">6 Guests</option>
+          </select>
+        </div>
+        <button onClick="{{ navAvailability }}" style="background:#1F3A4D;color:#fff;border:none;padding:12px 26px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;height:44px">Check Availability</button>
+        <a href="{{ waLink }}" target="_blank" style="background:#EAF1E8;color:#3E5233;border:none;padding:12px 22px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;height:44px;display:flex;align-items:center;white-space:nowrap">Chat on WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTRO -->
+  <section style="max-width:820px;margin:0 auto;padding:90px 24px;text-align:center">
+    <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 14px">Welcome to The Perch</p>
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(26px,3.4vw,36px);color:#1F3A4D;margin:0 0 20px;font-weight:600">A premium home away from home</h2>
+    <p style="color:#4A5C67;font-size:16px;line-height:1.8;margin:0">The Perch offers premium short-let accommodation designed for business travellers, families, couples, and visitors seeking comfort and privacy in Abuja. Every apartment is thoughtfully furnished and quietly set within the secure River Park Estate in Lugbe &mdash; close to the airport, calm, and always ready to welcome you.</p>
+  </section>
+
+  <!-- FEATURED APARTMENTS -->
+  <section style="background:#F8F3EA;padding:90px 24px">
+    <div style="max-width:1280px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:56px">
+        <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 14px">Our Apartments</p>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(26px,3.4vw,36px);color:#1F3A4D;margin:0;font-weight:600">Find your perch</h2>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:28px;justify-content:center">
+        <sc-for list="{{ apartments }}" as="apt" hint-placeholder-count="5">
+          <div style="width:340px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 24px rgba(31,58,77,0.08);display:flex;flex-direction:column">
+            <div style="height:220px;position:relative">
+              <image-slot id="{{ apt.slotId }}" shape="rect" placeholder="{{ apt.placeholderText }}" src="{{ apt.photo }}"></image-slot>
+              <div style="position:absolute;top:12px;left:12px;background:rgba(255,255,255,0.92);padding:5px 10px;border-radius:3px;font-size:11px;font-weight:600;color:#1F3A4D">{{ apt.type }}</div>
+            </div>
+            <div style="padding:22px;display:flex;flex-direction:column;gap:10px;flex:1">
+              <h3 style="font-family:'Playfair Display',serif;font-size:19px;color:#1F3A4D;margin:0;font-weight:600">{{ apt.name }}</h3>
+              <div style="display:flex;gap:14px;font-size:12.5px;color:#6B7F8C">
+                <span>{{ apt.maxGuests }} Guests</span>
+                <span>&middot;</span>
+                <span>{{ apt.bedroomsLabel }}</span>
+                <span>&middot;</span>
+                <span>{{ apt.beds }}</span>
+              </div>
+              <p style="color:#5C6E78;font-size:13.5px;line-height:1.6;margin:0">{{ apt.shortDesc }}</p>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+                <sc-for list="{{ apt.topAmenities }}" as="am" hint-placeholder-count="3">
+                  <span style="font-size:11px;background:#F8F3EA;color:#1F3A4D;padding:4px 9px;border-radius:3px">{{ am }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:auto;padding-top:12px;border-top:1px solid rgba(31,58,77,0.08)">
+                <div>
+                  <span style="font-family:'Playfair Display',serif;font-size:20px;color:#1F3A4D;font-weight:600">{{ apt.nightlyFormatted }}</span>
+                  <span style="font-size:12px;color:#8A97A0"> / night</span>
+                </div>
+                <span style="font-size:10px;color:#B8934F;font-weight:600">SAMPLE RATE</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:6px">
+                <button onClick="{{ apt.viewHandler }}" style="flex:1;background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:10px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer">View Apartment</button>
+                <button onClick="{{ apt.checkHandler }}" style="flex:1;background:#1F3A4D;color:#fff;border:none;padding:10px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer">Check Availability</button>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY STAY -->
+  <section style="max-width:1280px;margin:0 auto;padding:90px 24px">
+    <div style="text-align:center;margin-bottom:56px">
+      <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 14px">Why Stay With Us</p>
+      <h2 style="font-family:'Playfair Display',serif;font-size:clamp(26px,3.4vw,36px);color:#1F3A4D;margin:0;font-weight:600">Why Stay at The Perch?</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:36px">
+      <sc-for list="{{ whyStay }}" as="w" hint-placeholder-count="6">
+        <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div style="width:56px;height:56px;border-radius:50%;background:#F8F3EA;display:flex;align-items:center;justify-content:center" dangerouslySetInnerHTML="{{ w.iconHtml }}"></div>
+          <h4 style="font-size:15.5px;color:#1F3A4D;margin:0;font-weight:600">{{ w.title }}</h4>
+          <p style="font-size:13.5px;color:#6B7F8C;line-height:1.6;margin:0;max-width:220px">{{ w.desc }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- GALLERY PREVIEW -->
+  <section style="background:#1F3A4D;padding:90px 24px">
+    <div style="max-width:1280px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:36px;flex-wrap:wrap;gap:12px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,32px);color:#fff;margin:0;font-weight:600">A Glimpse Inside</h2>
+        <a onClick="{{ navGallery }}" style="color:#B8934F;font-size:14px;font-weight:600;cursor:pointer">View Full Gallery &rarr;</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,160px);gap:14px">
+        <div style="grid-column:span 2;grid-row:span 2"><image-slot id="gal-prev-1" shape="rect" placeholder="Living area"></image-slot></div>
+        <div><image-slot id="gal-prev-2" shape="rect" placeholder="Bedroom"></image-slot></div>
+        <div><image-slot id="gal-prev-3" shape="rect" placeholder="Kitchen"></image-slot></div>
+        <div><image-slot id="gal-prev-4" shape="rect" placeholder="Bathroom"></image-slot></div>
+        <div><image-slot id="gal-prev-5" shape="rect" placeholder="Exterior"></image-slot></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOCATION -->
+  <section style="max-width:1280px;margin:0 auto;padding:90px 24px;display:flex;flex-wrap:wrap;gap:48px;align-items:center">
+    <div style="flex:1;min-width:300px">
+      <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 14px">Location</p>
+      <h2 style="font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,32px);color:#1F3A4D;margin:0 0 18px;font-weight:600">Peacefully placed in River Park Estate</h2>
+      <p style="color:#5C6E78;font-size:15px;line-height:1.8;margin:0 0 24px">Plot 372 Vincent Azike Street, Cluster 1, River Park Estate, Lugbe, Abuja, Nigeria. Minutes from the Nnamdi Azikiwe International Airport, within a quiet, secure residential estate.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+        <a href="https://maps.google.com/?q=River+Park+Estate+Lugbe+Abuja" target="_blank" style="background:#1F3A4D;color:#fff;padding:11px 20px;border-radius:4px;font-size:13px;font-weight:600">Get Directions</a>
+        <button onClick="{{ copyAddress }}" style="background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:11px 20px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer">{{ copyAddressLabel }}</button>
+      </div>
+      <div style="border-top:1px solid rgba(31,58,77,0.1);padding-top:18px">
+        <p style="font-size:12px;font-weight:600;color:#1F3A4D;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 10px">Nearby Landmarks</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <sc-for list="{{ landmarks }}" as="lm" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#5C6E78;max-width:340px"><span>{{ lm.name }}</span><span>{{ lm.distance }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:300px;height:340px;border-radius:10px;overflow:hidden;box-shadow:0 6px 24px rgba(31,58,77,0.1)">
+      <image-slot id="map-placeholder" shape="rect" placeholder="Map: River Park Estate, Lugbe, Abuja"></image-slot>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section style="background:#F8F3EA;padding:80px 24px;text-align:center">
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(26px,3.6vw,38px);color:#1F3A4D;margin:0 0 16px;font-weight:600">Ready for your Slice of Paradise?</h2>
+    <p style="color:#5C6E78;font-size:15px;margin:0 0 30px">Reserve your stay in a few simple steps.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <button onClick="{{ navBooking }}" style="background:#1F3A4D;color:#fff;border:none;padding:14px 30px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">Book Your Stay</button>
+      <a href="{{ waLink }}" target="_blank" style="background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:14px 30px;border-radius:4px;font-size:14px;font-weight:600">Chat on WhatsApp</a>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ APARTMENTS LISTING ============ -->
+<sc-if value="{{ isApartments }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Apartments" style="max-width:1280px;margin:0 auto;padding:48px 24px 90px">
+  <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 10px">All Apartments</p>
+  <h1 style="font-family:'Playfair Display',serif;font-size:clamp(28px,3.6vw,38px);color:#1F3A4D;margin:0 0 32px;font-weight:600">Choose your apartment</h1>
+
+  <div style="display:flex;flex-wrap:wrap;gap:14px;background:#F8F3EA;padding:20px;border-radius:8px;margin-bottom:40px;align-items:flex-end">
+    <div style="min-width:140px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-in</label><input type="date" value="{{ filters.checkIn }}" onChange="{{ setFilterCheckIn }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px"/></div>
+    <div style="min-width:140px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-out</label><input type="date" value="{{ filters.checkOut }}" onChange="{{ setFilterCheckOut }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px"/></div>
+    <div style="min-width:110px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Guests</label>
+      <select value="{{ filters.guests }}" onChange="{{ setFilterGuests }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px">
+        <option value="0">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+      </select>
+    </div>
+    <div style="min-width:130px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Bedrooms</label>
+      <select value="{{ filters.bedrooms }}" onChange="{{ setFilterBedrooms }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px">
+        <option value="-1">Any</option><option value="0">Studio</option><option value="1">1 Bedroom</option><option value="2">2 Bedrooms</option><option value="3">3 Bedrooms</option>
+      </select>
+    </div>
+    <div style="min-width:150px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Max Price / Night</label>
+      <select value="{{ filters.maxPrice }}" onChange="{{ setFilterMaxPrice }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px">
+        <option value="0">Any</option><option value="60000">Up to \u20a660,000</option><option value="100000">Up to \u20a6100,000</option><option value="150000">Up to \u20a6150,000</option><option value="250000">Up to \u20a6250,000</option>
+      </select>
+    </div>
+    <button onClick="{{ resetFilters }}" style="background:#fff;border:1px solid #1F3A4D;color:#1F3A4D;padding:9px 16px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer">Reset</button>
+  </div>
+
+  <p style="font-size:13.5px;color:#6B7F8C;margin:0 0 24px">{{ filteredCountLabel }}</p>
+
+  <div style="display:flex;flex-direction:column;gap:22px">
+    <sc-for list="{{ filteredApartments }}" as="apt" hint-placeholder-count="5">
+      <div style="display:flex;flex-wrap:wrap;background:#fff;border:1px solid rgba(31,58,77,0.08);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(31,58,77,0.05)">
+        <div style="width:320px;flex:0 0 320px;min-height:220px;position:relative">
+          <image-slot id="{{ apt.slotIdList }}" shape="rect" placeholder="{{ apt.placeholderText }}" src="{{ apt.photo }}"></image-slot>
+          <div style="position:absolute;top:12px;left:12px;background:{{ apt.availBadgeBg }};padding:5px 10px;border-radius:3px;font-size:11px;font-weight:600;color:{{ apt.availBadgeColor }}">{{ apt.availBadgeText }}</div>
+        </div>
+        <div style="flex:1;min-width:280px;padding:24px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div>
+              <span style="font-size:11px;font-weight:600;color:#B8934F;text-transform:uppercase;letter-spacing:0.04em">{{ apt.type }}</span>
+              <h3 style="font-family:'Playfair Display',serif;font-size:20px;color:#1F3A4D;margin:4px 0 0;font-weight:600">{{ apt.name }}</h3>
+            </div>
+            <div style="text-align:right">
+              <div><span style="font-family:'Playfair Display',serif;font-size:22px;color:#1F3A4D;font-weight:600">{{ apt.nightlyFormatted }}</span><span style="font-size:12px;color:#8A97A0"> / night</span></div>
+              <span style="font-size:10px;color:#B8934F;font-weight:600">SAMPLE RATE</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;font-size:13px;color:#6B7F8C">
+            <span>{{ apt.maxGuests }} Guests</span><span>&middot;</span><span>{{ apt.bedroomsLabel }}</span><span>&middot;</span><span>{{ apt.bathrooms }}</span><span>&middot;</span><span>{{ apt.size }}</span>
+          </div>
+          <p style="color:#5C6E78;font-size:13.5px;line-height:1.6;margin:2px 0">{{ apt.shortDesc }}</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <sc-for list="{{ apt.topAmenities }}" as="am" hint-placeholder-count="4">
+              <span style="font-size:11px;background:#F8F3EA;color:#1F3A4D;padding:4px 9px;border-radius:3px">{{ am }}</span>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:auto;padding-top:10px">
+            <button onClick="{{ apt.viewHandler }}" style="background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:9px 18px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer">View Apartment</button>
+            <button onClick="{{ apt.checkHandler }}" style="background:#1F3A4D;color:#fff;border:none;padding:9px 18px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer">Check Availability</button>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ APARTMENT DETAIL ============ -->
+<sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Apartment Detail" style="max-width:1280px;margin:0 auto;padding:32px 24px 90px">
+  <div style="font-size:13px;color:#8A97A0;margin-bottom:20px"><a onClick="{{ navApartments }}" style="cursor:pointer;color:#8A97A0">Apartments</a> / <span style="color:#1F3A4D">{{ selectedApt.name }}</span></div>
+
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:36px;border-radius:10px;overflow:hidden">
+    <div style="grid-row:span 2;min-height:420px"><image-slot id="{{ selectedApt.slotDetailMain }}" shape="rect" placeholder="{{ selectedApt.placeholderText }}" src="{{ selectedApt.detailMainPhoto }}"></image-slot></div>
+    <div style="min-height:206px"><image-slot id="{{ selectedApt.slotDetail2 }}" shape="rect" placeholder="Bedroom"></image-slot></div>
+    <div style="min-height:206px"><image-slot id="{{ selectedApt.slotDetail3 }}" shape="rect" placeholder="Bathroom"></image-slot></div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:48px">
+    <div style="flex:2;min-width:320px">
+      <span style="font-size:12px;font-weight:600;color:#B8934F;text-transform:uppercase;letter-spacing:0.05em">{{ selectedApt.type }}</span>
+      <h1 style="font-family:'Playfair Display',serif;font-size:clamp(28px,3.4vw,36px);color:#1F3A4D;margin:6px 0 14px;font-weight:600">{{ selectedApt.name }}</h1>
+      <div style="display:flex;gap:20px;font-size:14px;color:#5C6E78;margin-bottom:20px;flex-wrap:wrap">
+        <span>{{ selectedApt.maxGuests }} Guests</span><span>&middot;</span><span>{{ selectedApt.bedroomsLabel }}</span><span>&middot;</span><span>{{ selectedApt.bathrooms }}</span><span>&middot;</span><span>{{ selectedApt.beds }}</span><span>&middot;</span><span>{{ selectedApt.size }}</span>
+      </div>
+      <p style="color:#5C6E78;font-size:15px;line-height:1.8;margin:0 0 32px">{{ selectedApt.longDesc }}</p>
+
+      <h3 style="font-size:16px;color:#1F3A4D;margin:0 0 16px;font-weight:600">Amenities</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:36px">
+        <sc-for list="{{ selectedApt.amenities }}" as="am" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#3F4F58"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B8934F" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>{{ am }}</div>
+        </sc-for>
+      </div>
+
+      <h3 style="font-size:16px;color:#1F3A4D;margin:0 0 16px;font-weight:600">House Rules &amp; Policies</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:36px;background:#F8F3EA;padding:20px;border-radius:8px">
+        <div><p style="font-size:11px;color:#8A97A0;text-transform:uppercase;margin:0 0 4px;font-weight:600">Check-in</p><p style="font-size:14px;color:#1F3A4D;margin:0">{{ selectedApt.checkinTime }}</p></div>
+        <div><p style="font-size:11px;color:#8A97A0;text-transform:uppercase;margin:0 0 4px;font-weight:600">Check-out</p><p style="font-size:14px;color:#1F3A4D;margin:0">{{ selectedApt.checkoutTime }}</p></div>
+        <div><p style="font-size:11px;color:#8A97A0;text-transform:uppercase;margin:0 0 4px;font-weight:600">Minimum Stay</p><p style="font-size:14px;color:#1F3A4D;margin:0">{{ selectedApt.minStayLabel }}</p></div>
+        <div><p style="font-size:11px;color:#8A97A0;text-transform:uppercase;margin:0 0 4px;font-weight:600">Cancellation</p><p style="font-size:14px;color:#1F3A4D;margin:0">Free up to 48h before check-in</p></div>
+      </div>
+
+      <h3 style="font-size:16px;color:#1F3A4D;margin:0 0 16px;font-weight:600">Availability Calendar</h3>
+      <div style="background:#fff;border:1px solid rgba(31,58,77,0.1);border-radius:8px;padding:20px;margin-bottom:20px">
+        <p style="font-size:13px;color:#8A97A0;margin:0 0 14px">{{ calendarMonthLabel }}</p>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+          <sc-for list="{{ calendarWeekdays }}" as="wd" hint-placeholder-count="7">
+            <div style="text-align:center;font-size:11px;color:#8A97A0;font-weight:600;padding:4px 0">{{ wd }}</div>
+          </sc-for>
+          <sc-for list="{{ calendarCells }}" as="cell" hint-placeholder-count="35">
+            <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:4px;background:{{ cell.bg }};color:{{ cell.color }}">{{ cell.day }}</div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:11.5px;color:#5C6E78">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#EAF1E8;display:inline-block"></span>Available</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#B8934F;display:inline-block"></span>Reserved</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1F3A4D;display:inline-block"></span>Confirmed</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#D8D3C6;display:inline-block"></span>Blocked / Maintenance</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:300px">
+      <div style="position:sticky;top:100px;background:#fff;border:1px solid rgba(31,58,77,0.1);border-radius:10px;padding:26px;box-shadow:0 6px 24px rgba(31,58,77,0.06)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div><span style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;font-weight:600">{{ selectedApt.nightlyFormatted }}</span><span style="font-size:13px;color:#8A97A0"> / night</span></div>
+          <span style="font-size:10px;color:#B8934F;font-weight:600">SAMPLE RATE</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-in</label><input type="date" value="{{ booking.checkIn }}" onChange="{{ setBookingCheckIn }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px"/></div>
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-out</label><input type="date" value="{{ booking.checkOut }}" onChange="{{ setBookingCheckOut }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px"/></div>
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Guests</label>
+            <select value="{{ booking.guests }}" onChange="{{ setBookingGuests }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:9px;font-size:13px">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </div>
+        </div>
+
+        <sc-if value="{{ detailBreakdown.valid }}" hint-placeholder-val="{{ false }}">
+          <div style="border-top:1px solid rgba(31,58,77,0.1);padding-top:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;font-size:13.5px">
+            <div style="display:flex;justify-content:space-between;color:#5C6E78"><span>{{ detailBreakdown.standardNights }} standard night(s)</span><span>{{ detailBreakdown.standardTotalFormatted }}</span></div>
+            <sc-if value="{{ detailBreakdown.hasWeekend }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:space-between;color:#5C6E78"><span>{{ detailBreakdown.weekendNights }} weekend night(s)</span><span>{{ detailBreakdown.weekendTotalFormatted }}</span></div>
+            </sc-if>
+            <div style="display:flex;justify-content:space-between;color:#5C6E78"><span>Cleaning fee</span><span>{{ detailBreakdown.cleaningFormatted }}</span></div>
+            <div style="display:flex;justify-content:space-between;color:#5C6E78"><span>Security deposit (refundable)</span><span>{{ detailBreakdown.depositFormatted }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-weight:700;color:#1F3A4D;border-top:1px solid rgba(31,58,77,0.1);padding-top:8px;margin-top:4px"><span>Total</span><span>{{ detailBreakdown.totalFormatted }}</span></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ detailBreakdown.tooShort }}" hint-placeholder-val="{{ false }}">
+          <p style="font-size:12.5px;color:#B84F4F;margin:0 0 14px">Minimum stay is {{ selectedApt.minStayLabel }}.</p>
+        </sc-if>
+
+        <button onClick="{{ proceedToBookingFromDetail }}" style="width:100%;background:#1F3A4D;color:#fff;border:none;padding:13px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px">Reserve Now</button>
+        <a href="{{ waLink }}" target="_blank" style="display:block;text-align:center;width:100%;background:#EAF1E8;color:#3E5233;padding:12px;border-radius:4px;font-size:13.5px;font-weight:600">Enquire on WhatsApp</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:60px">
+    <h3 style="font-size:18px;color:#1F3A4D;margin:0 0 20px;font-weight:600;font-family:'Playfair Display',serif">Related Apartments</h3>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <sc-for list="{{ relatedApartments }}" as="apt" hint-placeholder-count="3">
+        <div onClick="{{ apt.viewHandler }}" style="width:260px;cursor:pointer">
+          <div style="height:150px;border-radius:8px;overflow:hidden;margin-bottom:10px"><image-slot id="{{ apt.slotRelated }}" shape="rect" placeholder="{{ apt.placeholderText }}" src="{{ apt.photo }}"></image-slot></div>
+          <p style="font-size:14px;color:#1F3A4D;font-weight:600;margin:0 0 2px">{{ apt.name }}</p>
+          <p style="font-size:12.5px;color:#8A97A0;margin:0">{{ apt.nightlyFormatted }} / night</p>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ AVAILABILITY ============ -->
+<sc-if value="{{ isAvailability }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Availability" style="max-width:1100px;margin:0 auto;padding:48px 24px 90px">
+  <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 10px">Check Availability</p>
+  <h1 style="font-family:'Playfair Display',serif;font-size:clamp(28px,3.6vw,38px);color:#1F3A4D;margin:0 0 32px;font-weight:600">When would you like to stay?</h1>
+
+  <div style="background:#F8F3EA;border-radius:8px;padding:24px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:20px">
+    <div style="flex:1;min-width:150px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-in</label><input type="date" value="{{ avail.checkIn }}" onChange="{{ setAvailCheckIn }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+    <div style="flex:1;min-width:150px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-out</label><input type="date" value="{{ avail.checkOut }}" onChange="{{ setAvailCheckOut }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+    <div style="flex:0.7;min-width:110px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Adults</label>
+      <select value="{{ avail.adults }}" onChange="{{ setAvailAdults }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+      </select>
+    </div>
+    <div style="flex:0.7;min-width:110px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Children</label>
+      <select value="{{ avail.children }}" onChange="{{ setAvailChildren }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px">
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+      </select>
+    </div>
+  </div>
+  <sc-if value="{{ availError }}" hint-placeholder-val="{{ false }}">
+    <p style="color:#B84F4F;font-size:13px;margin:0 0 20px">{{ availError }}</p>
+  </sc-if>
+
+  <p style="font-size:13.5px;color:#6B7F8C;margin:0 0 24px">{{ availResultsLabel }}</p>
+
+  <div style="display:flex;flex-direction:column;gap:18px">
+    <sc-for list="{{ availApartments }}" as="apt" hint-placeholder-count="5">
+      <div style="display:flex;flex-wrap:wrap;background:#fff;border:1px solid rgba(31,58,77,0.08);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(31,58,77,0.05)">
+        <div style="width:220px;flex:0 0 220px;min-height:160px"><image-slot id="{{ apt.slotIdAvail }}" shape="rect" placeholder="{{ apt.placeholderText }}" src="{{ apt.photo }}"></image-slot></div>
+        <div style="flex:1;min-width:240px;padding:20px;display:flex;flex-direction:column;justify-content:center;gap:6px">
+          <span style="font-size:11px;font-weight:600;color:#B8934F;text-transform:uppercase">{{ apt.type }}</span>
+          <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:#1F3A4D;margin:0;font-weight:600">{{ apt.name }}</h3>
+          <div style="font-size:13px;color:#6B7F8C">{{ apt.maxGuests }} Guests &middot; {{ apt.bedroomsLabel }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+            <sc-for list="{{ apt.topAmenities }}" as="am" hint-placeholder-count="3"><span style="font-size:11px;background:#F8F3EA;color:#1F3A4D;padding:3px 8px;border-radius:3px">{{ am }}</span></sc-for>
+          </div>
+        </div>
+        <div style="width:220px;flex:0 0 220px;padding:20px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:8px;border-left:1px solid rgba(31,58,77,0.06)">
+          <div><span style="font-family:'Playfair Display',serif;font-size:19px;color:#1F3A4D;font-weight:600">{{ apt.nightlyFormatted }}</span><span style="font-size:12px;color:#8A97A0"> / night</span></div>
+          <sc-if value="{{ availValidRange }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#5C6E78">{{ apt.stayTotalFormatted }} total</span></sc-if>
+          <button onClick="{{ apt.selectHandler }}" style="background:#1F3A4D;color:#fff;border:none;padding:9px 18px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer">Select &amp; Continue</button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ BOOKING FLOW ============ -->
+<sc-if value="{{ isBooking }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Booking" style="max-width:960px;margin:0 auto;padding:48px 24px 100px">
+  <div style="display:flex;justify-content:center;gap:0;margin-bottom:48px;flex-wrap:wrap">
+    <sc-for list="{{ bookingSteps }}" as="st" hint-placeholder-count="5">
+      <div style="display:flex;align-items:center">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px">
+          <div style="width:32px;height:32px;border-radius:50%;background:{{ st.circleBg }};color:{{ st.circleColor }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">{{ st.num }}</div>
+          <span style="font-size:11px;color:{{ st.labelColor }};font-weight:600;text-align:center">{{ st.label }}</span>
+        </div>
+        <sc-if value="{{ st.showConnector }}" hint-placeholder-val="{{ false }}"><div style="width:32px;height:1px;background:rgba(31,58,77,0.15);margin:0 4px 20px"></div></sc-if>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- STEP 1: DATES -->
+  <sc-if value="{{ bookingStepIs1 }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fff;border:1px solid rgba(31,58,77,0.1);border-radius:10px;padding:36px">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px;color:#1F3A4D;margin:0 0 24px;font-weight:600">Select Your Dates</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:24px">
+        <div style="flex:1;min-width:150px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-in</label><input type="date" value="{{ booking.checkIn }}" onChange="{{ setBookingCheckIn }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+        <div style="flex:1;min-width:150px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Check-out</label><input type="date" value="{{ booking.checkOut }}" onChange="{{ setBookingCheckOut }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+        <div style="flex:0.6;min-width:100px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Adults</label>
+          <select value="{{ booking.adults }}" onChange="{{ setBookingAdults }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+        </div>
+        <div style="flex:0.6;min-width:100px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Children</label>
+          <select value="{{ booking.children }}" onChange="{{ setBookingChildren }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
+        </div>
+      </div>
+      <sc-if value="{{ bookingDateError }}" hint-placeholder-val="{{ false }}"><p style="color:#B84F4F;font-size:13px;margin:0 0 20px">{{ bookingDateError }}</p></sc-if>
+      <button onClick="{{ bookingGoStep2 }}" style="background:#1F3A4D;color:#fff;border:none;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">Continue</button>
+    </div>
+  </sc-if>
+
+  <!-- STEP 2: SELECT APARTMENT -->
+  <sc-if value="{{ bookingStepIs2 }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px;color:#1F3A4D;margin:0 0 24px;font-weight:600">Select Your Apartment</h2>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px">
+        <sc-for list="{{ bookingApartmentOptions }}" as="apt" hint-placeholder-count="5">
+          <div onClick="{{ apt.selectHandler }}" style="display:flex;flex-wrap:wrap;gap:16px;background:#fff;border:2px solid {{ apt.borderColor }};border-radius:10px;padding:16px;cursor:pointer;align-items:center">
+            <div style="width:120px;height:80px;flex:0 0 120px;border-radius:6px;overflow:hidden"><image-slot id="{{ apt.slotIdBook }}" shape="rect" placeholder="Photo" src="{{ apt.photo }}"></image-slot></div>
+            <div style="flex:1;min-width:180px">
+              <p style="font-size:15px;color:#1F3A4D;font-weight:600;margin:0 0 2px">{{ apt.name }}</p>
+              <p style="font-size:12.5px;color:#8A97A0;margin:0">{{ apt.maxGuests }} Guests &middot; {{ apt.bedroomsLabel }} &middot; {{ apt.nights }} nights</p>
+            </div>
+            <div style="text-align:right">
+              <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1F3A4D;font-weight:600;margin:0">{{ apt.stayTotalFormatted }}</p>
+              <p style="font-size:11px;color:#8A97A0;margin:0">total, before fees</p>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:12px">
+        <button onClick="{{ bookingGoStep1 }}" style="background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:12px 24px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">Back</button>
+        <button onClick="{{ bookingGoStep3 }}" disabled="{{ bookingNoApartmentSelected }}" style="background:{{ bookingStep3ButtonBg }};color:#fff;border:none;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">Continue</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- STEP 3: GUEST INFO -->
+  <sc-if value="{{ bookingStepIs3 }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-wrap:wrap;gap:32px">
+      <div style="flex:2;min-width:300px;background:#fff;border:1px solid rgba(31,58,77,0.1);border-radius:10px;padding:32px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;color:#1F3A4D;margin:0 0 24px;font-weight:600">Guest Information</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Full Name</label><input type="text" value="{{ booking.guest.name }}" onChange="{{ setGuestName }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Email</label><input type="email" value="{{ booking.guest.email }}" onChange="{{ setGuestEmail }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Telephone</label><input type="tel" value="{{ booking.guest.phone }}" onChange="{{ setGuestPhone }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">WhatsApp Number</label><input type="tel" value="{{ booking.guest.whatsapp }}" onChange="{{ setGuestWhatsapp }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Expected Arrival Time</label><input type="time" value="{{ booking.guest.arrival }}" onChange="{{ setGuestArrival }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px"/></div>
+          <div><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Booking Purpose (optional)</label>
+            <select value="{{ booking.guest.purpose }}" onChange="{{ setGuestPurpose }}" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px">
+              <option value="">Select...</option><option value="business">Business</option><option value="leisure">Leisure</option><option value="event">Event / Wedding</option><option value="relocation">Relocation</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:16px"><label style="display:block;font-size:11px;font-weight:600;color:#1F3A4D;text-transform:uppercase;margin-bottom:6px">Special Requests</label><textarea value="{{ booking.guest.requests }}" onChange="{{ setGuestRequests }}" rows="3" style="width:100%;border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:10px;font-size:14px;font-family:inherit;resize:vertical"></textarea></div>
+        <div style="display:flex;gap:12px;margin-top:24px">
+          <button onClick="{{ bookingGoStep2 }}" style="background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:12px 24px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">Back</button>
+          <button onClick="{{ bookingGoStep4 }}" disabled="{{ bookingGuestIncomplete }}" style="background:{{ bookingStep4ButtonBg }};color:#fff;border:none;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">Continue to Payment</button>
+        </div>
+      </div>
+<div style="flex:1;min-width:260px">
+        <div style="background:#F8F3EA;border-radius:10px;padding:22px;position:sticky;top:100px">
+          <p style="font-size:13px;font-weight:700;color:#1F3A4D;margin:0 0 14px;text-transform:uppercase;letter-spacing:0.04em">Booking Summary</p>
+          <sc-if value="{{ summaryApt }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size:15px;font-weight:600;color:#1F3A4D;margin:0 0 4px">{{ summaryApt.name }}</p>
+            <p style="font-size:12.5px;color:#8A97A0;margin:0 0 16px">{{ summaryDatesLabel }}</p>
+          </sc-if>
+          <sc-if value="{{ summaryBd.valid }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#5C6E78;border-top:1px solid rgba(31,58,77,0.1);padding-top:12px">
+              <div style="display:flex;justify-content:space-between"><span>Stay subtotal</span><span>{{ summaryBd.stayOnlyTotalFormatted }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Cleaning fee</span><span>{{ summaryBd.cleaningFormatted }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Deposit (refundable)</span><span>{{ summaryBd.depositFormatted }}</span></div>
+              <div style="display:flex;justify-content:space-between;font-weight:700;color:#1F3A4D;border-top:1px solid rgba(31,58,77,0.15);padding-top:8px;margin-top:2px"><span>Total</span><span>{{ summaryBd.totalFormatted }}</span></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ summaryNoApt }}" hint-placeholder-val="{{ true }}">
+            <p style="font-size:13px;color:#8A97A0;margin:0">Select an apartment to see pricing.</p>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- STEP 4: PAYMENT -->
+  <sc-if value="{{ bookingStepIs4 }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-wrap:wrap;gap:32px">
+      <div style="flex:2;min-width:300px;background:#fff;border:1px solid rgba(31,58,77,0.1);border-radius:10px;padding:32px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;color:#1F3A4D;margin:0 0 24px;font-weight:600">Payment Method</h2>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">
+          <sc-for list="{{ paymentOptions }}" as="po" hint-placeholder-count="4">
+            <div onClick="{{ po.selectHandler }}" style="display:flex;align-items:center;gap:14px;border:2px solid {{ po.borderColor }};border-radius:8px;padding:16px;cursor:pointer">
+              <div style="width:18px;height:18px;border-radius:50%;border:2px solid {{ po.dotBorder }};display:flex;align-items:center;justify-content:center"><div style="width:9px;height:9px;border-radius:50%;background:{{ po.dotFill }}"></div></div>
+              <div><p style="font-size:14px;color:#1F3A4D;font-weight:600;margin:0">{{ po.label }}</p><p style="font-size:12.5px;color:#8A97A0;margin:2px 0 0">{{ po.desc }}</p></div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ paymentIsTransfer }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#F8F3EA;border-radius:8px;padding:18px;margin-bottom:20px;font-size:13.5px;color:#3F4F58;line-height:1.7">
+            <p style="margin:0 0 4px"><strong>Bank:</strong> Sample Bank Plc</p>
+            <p style="margin:0 0 4px"><strong>Account Name:</strong> The Perch Apartments Ltd</p>
+            <p style="margin:0 0 4px"><strong>Account Number:</strong> 0123456789</p>
+            <p style="margin:0">Booking reference will be generated after submission. Upload proof of payment to complete your reservation &mdash; it will be marked "Awaiting Verification" until confirmed.</p>
+          </div>
+        </sc-if>
+        <div style="display:flex;gap:12px">
+          <button onClick="{{ bookingGoStep3 }}" style="background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:12px 24px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">Back</button>
+          <button onClick="{{ bookingGoStep5 }}" style="background:#1F3A4D;color:#fff;border:none;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">{{ paymentSubmitLabel }}</button>
+        </div>
+      </div>
+<div style="flex:1;min-width:260px">
+        <div style="background:#F8F3EA;border-radius:10px;padding:22px;position:sticky;top:100px">
+          <p style="font-size:13px;font-weight:700;color:#1F3A4D;margin:0 0 14px;text-transform:uppercase;letter-spacing:0.04em">Booking Summary</p>
+          <sc-if value="{{ summaryApt }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size:15px;font-weight:600;color:#1F3A4D;margin:0 0 4px">{{ summaryApt.name }}</p>
+            <p style="font-size:12.5px;color:#8A97A0;margin:0 0 16px">{{ summaryDatesLabel }}</p>
+          </sc-if>
+          <sc-if value="{{ summaryBd.valid }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#5C6E78;border-top:1px solid rgba(31,58,77,0.1);padding-top:12px">
+              <div style="display:flex;justify-content:space-between"><span>Stay subtotal</span><span>{{ summaryBd.stayOnlyTotalFormatted }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Cleaning fee</span><span>{{ summaryBd.cleaningFormatted }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Deposit (refundable)</span><span>{{ summaryBd.depositFormatted }}</span></div>
+              <div style="display:flex;justify-content:space-between;font-weight:700;color:#1F3A4D;border-top:1px solid rgba(31,58,77,0.15);padding-top:8px;margin-top:2px"><span>Total</span><span>{{ summaryBd.totalFormatted }}</span></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ summaryNoApt }}" hint-placeholder-val="{{ true }}">
+            <p style="font-size:13px;color:#8A97A0;margin:0">Select an apartment to see pricing.</p>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- STEP 5: CONFIRMATION -->
+  <sc-if value="{{ bookingStepIs5 }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;background:#fff;border:1px solid rgba(31,58,77,0.1);border-radius:10px;padding:52px 32px">
+      <div style="width:64px;height:64px;border-radius:50%;background:#EAF1E8;display:flex;align-items:center;justify-content:center;margin:0 auto 20px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5C7A52" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:26px;color:#1F3A4D;margin:0 0 8px;font-weight:600">{{ paymentIsTransferConfirmTitle }}</h2>
+      <p style="color:#5C6E78;font-size:14px;margin:0 0 28px">Booking Reference <strong style="color:#1F3A4D">{{ bookingReference }}</strong></p>
+      <div style="max-width:420px;margin:0 auto;text-align:left;background:#F8F3EA;border-radius:8px;padding:20px;margin-bottom:28px;font-size:13.5px;color:#3F4F58;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between"><span>Apartment</span><strong>{{ bookingConfirmApt.name }}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Check-in</span><strong>{{ booking.checkIn }}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Check-out</span><strong>{{ booking.checkOut }}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Total</span><strong>{{ bookingFinalBreakdown.totalFormatted }}</strong></div>
+      </div>
+      <p style="font-size:13px;color:#8A97A0;margin:0 0 28px">A confirmation has been sent to {{ booking.guest.email }}. Check-in instructions will follow once your reservation is confirmed.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button style="background:#1F3A4D;color:#fff;border:none;padding:12px 24px;border-radius:4px;font-size:13.5px;font-weight:600;cursor:pointer">Download Confirmation</button>
+        <button style="background:#fff;color:#1F3A4D;border:1px solid #1F3A4D;padding:12px 24px;border-radius:4px;font-size:13.5px;font-weight:600;cursor:pointer">Add to Calendar</button>
+        <a href="{{ waLink }}" target="_blank" style="background:#EAF1E8;color:#3E5233;padding:12px 24px;border-radius:4px;font-size:13.5px;font-weight:600">Send via WhatsApp</a>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ============ GALLERY ============ -->
+<sc-if value="{{ isGallery }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Gallery" style="max-width:1280px;margin:0 auto;padding:48px 24px 90px">
+  <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 10px">Gallery</p>
+  <h1 style="font-family:'Playfair Display',serif;font-size:clamp(28px,3.6vw,38px);color:#1F3A4D;margin:0 0 28px;font-weight:600">A Glimpse Inside The Perch</h1>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px">
+    <sc-for list="{{ galleryCategories }}" as="cat" hint-placeholder-count="7">
+      <button onClick="{{ cat.selectHandler }}" style="background:{{ cat.bg }};color:{{ cat.color }};border:1px solid {{ cat.borderColor }};padding:9px 18px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer">{{ cat.label }}</button>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;grid-auto-rows:180px">
+    <sc-for list="{{ galleryFilteredImages }}" as="img" hint-placeholder-count="10">
+      <div onClick="{{ img.openHandler }}" style="grid-row:span {{ img.rowSpan }};position:relative;cursor:pointer;border-radius:8px;overflow:hidden">
+        <image-slot id="{{ img.slotId }}" shape="rect" placeholder="{{ img.caption }}" src="{{ img.photo }}"></image-slot>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(0deg,rgba(31,58,77,0.65),transparent);font-size:12px;color:#fff;font-weight:500">{{ img.caption }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ lightboxImage }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(15,25,32,0.92);z-index:100;display:flex;align-items:center;justify-content:center" onClick="{{ closeLightbox }}">
+      <div style="width:min(900px,88vw);height:min(620px,80vh)" onClick="{{ stopPropagation }}"><image-slot id="{{ lightboxImage.slotId }}" shape="rect" placeholder="{{ lightboxImage.caption }}"></image-slot></div>
+      <button onClick="{{ closeLightbox }}" style="position:absolute;top:24px;right:28px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer">&times;</button>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ============ ABOUT ============ -->
+<sc-if value="{{ isAbout }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="About">
+  <section style="background:#1F3A4D;padding:80px 24px;text-align:center">
+    <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 14px">Our Story</p>
+    <h1 style="font-family:'Playfair Display',serif;font-size:clamp(28px,3.8vw,40px);color:#fff;margin:0 auto;max-width:700px;font-weight:600">The Perch was created to provide visitors to Abuja with a peaceful, comfortable and private place to rest, work and reconnect.</h1>
+  </section>
+  <section style="max-width:900px;margin:0 auto;padding:80px 24px;display:flex;flex-direction:column;gap:56px">
+    <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:center">
+      <div style="flex:1;min-width:280px;height:280px;border-radius:10px;overflow:hidden"><image-slot id="about-1" shape="rect" placeholder="The Perch living space"></image-slot></div>
+      <div style="flex:1;min-width:280px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 14px;font-weight:600">The Perch Experience</h2>
+        <p style="color:#5C6E78;font-size:15px;line-height:1.8;margin:0">Every space is prepared to offer the convenience of home with the thoughtful service of a premium hospitality property. From arrival to departure, our team quietly attends to the details so your stay feels effortless.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap-reverse;gap:32px;align-items:center">
+      <div style="flex:1;min-width:280px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 14px;font-weight:600">Hospitality Values</h2>
+        <p style="color:#5C6E78;font-size:15px;line-height:1.8;margin:0">We hold ourselves to a standard of cleanliness, discretion and genuine care. Housekeeping, maintenance and guest support are managed closely so that every apartment is ready to receive you.</p>
+      </div>
+      <div style="flex:1;min-width:280px;height:280px;border-radius:10px;overflow:hidden"><image-slot id="about-2" shape="rect" placeholder="Housekeeping / hospitality"></image-slot></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:center">
+      <div style="flex:1;min-width:280px;height:280px;border-radius:10px;overflow:hidden"><image-slot id="about-3" shape="rect" placeholder="River Park Estate, Lugbe"></image-slot></div>
+      <div style="flex:1;min-width:280px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 14px;font-weight:600">Location &amp; Accessibility</h2>
+        <p style="color:#5C6E78;font-size:15px;line-height:1.8;margin:0">Set within the secure, well-planned River Park Estate in Lugbe, The Perch is a short drive from the Nnamdi Azikiwe International Airport &mdash; convenient for arriving guests and easy to reach for local visitors.</p>
+      </div>
+    </div>
+    <div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 20px;font-weight:600;text-align:center">Safety, Comfort &amp; Property Policies</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px">
+        <div style="background:#F8F3EA;padding:22px;border-radius:8px"><h4 style="font-size:14.5px;color:#1F3A4D;margin:0 0 8px;font-weight:600">Secure Estate</h4><p style="font-size:13.5px;color:#5C6E78;line-height:1.6;margin:0">Gated, guarded residential estate with controlled access.</p></div>
+        <div style="background:#F8F3EA;padding:22px;border-radius:8px"><h4 style="font-size:14.5px;color:#1F3A4D;margin:0 0 8px;font-weight:600">Reliable Power &amp; Water</h4><p style="font-size:13.5px;color:#5C6E78;line-height:1.6;margin:0">Backup power and water supply maintained across the property.</p></div>
+        <div style="background:#F8F3EA;padding:22px;border-radius:8px"><h4 style="font-size:14.5px;color:#1F3A4D;margin:0 0 8px;font-weight:600">Housekeeping Standards</h4><p style="font-size:13.5px;color:#5C6E78;line-height:1.6;margin:0">Professional cleaning between every stay.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ============ CONTACT ============ -->
+<sc-if value="{{ isContact }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Contact" style="max-width:1100px;margin:0 auto;padding:48px 24px 90px">
+  <p style="color:#B8934F;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 10px">Contact Us</p>
+  <h1 style="font-family:'Playfair Display',serif;font-size:clamp(28px,3.6vw,38px);color:#1F3A4D;margin:0 0 40px;font-weight:600">We'd love to hear from you</h1>
+  <div style="display:flex;flex-wrap:wrap;gap:48px">
+    <div style="flex:1;min-width:300px">
+      <form onSubmit="{{ submitContactForm }}" style="display:flex;flex-direction:column;gap:14px;margin-bottom:36px">
+        <input type="text" placeholder="Full name" value="{{ contactForm.name }}" onChange="{{ setContactName }}" style="border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:12px;font-size:14px"/>
+        <input type="email" placeholder="Email address" value="{{ contactForm.email }}" onChange="{{ setContactEmail }}" style="border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:12px;font-size:14px"/>
+        <input type="tel" placeholder="Telephone" value="{{ contactForm.phone }}" onChange="{{ setContactPhone }}" style="border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:12px;font-size:14px"/>
+        <textarea placeholder="Your message" rows="4" value="{{ contactForm.message }}" onChange="{{ setContactMessage }}" style="border:1px solid rgba(31,58,77,0.2);border-radius:4px;padding:12px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+        <button type="submit" style="background:#1F3A4D;color:#fff;border:none;padding:13px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer">{{ contactSubmitLabel }}</button>
+      </form>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:36px">
+        <div style="display:flex;gap:10px;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8934F" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><a href="tel:07073318012" style="font-size:14.5px;color:#1F3A4D;font-weight:600">0707 331 8012</a></div>
+        <div style="display:flex;gap:10px;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#5C7A52"><path d="M12.04 2c-5.5 0-10 4.5-10 10 0 1.77.46 3.43 1.27 4.87L2 22l5.3-1.39a9.9 9.9 0 0 0 4.74 1.2h.01c5.5 0 10-4.5 10-10s-4.5-9.81-10.01-9.81zm5.83 14.13c-.24.68-1.42 1.3-1.96 1.38-.5.08-1.14.11-1.83-.11-.42-.14-.96-.32-1.65-.62-2.9-1.25-4.79-4.17-4.93-4.36-.14-.19-1.18-1.57-1.18-2.99 0-1.42.74-2.11 1-2.4.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 1.99.88 2.14.07.14.12.31.02.5-.1.19-.15.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.29-.13.57.17.29.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.14.47.12.65-.07.18-.19.75-.87.95-1.17.2-.29.4-.24.67-.14.28.1 1.77.83 2.08.98.3.14.5.22.58.34.07.13.07.72-.17 1.4z"/></svg><a href="{{ waLink }}" target="_blank" style="font-size:14.5px;color:#1F3A4D;font-weight:600">WhatsApp Chat</a></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8934F" stroke-width="2" style="margin-top:2px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span style="font-size:14.5px;color:#1F3A4D">Plot 372 Vincent Azike Street, Cluster 1,<br/>River Park Estate, Lugbe, Abuja</span></div>
+        <div style="display:flex;gap:10px;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8934F" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span style="font-size:14.5px;color:#1F3A4D">Guest Support: 8:00am &ndash; 9:00pm daily</span></div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;color:#1F3A4D;margin:0 0 14px;font-weight:600">Frequently Asked Questions</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ faqs }}" as="faq" hint-placeholder-count="4">
+            <div onClick="{{ faq.toggleHandler }}" style="border:1px solid rgba(31,58,77,0.1);border-radius:6px;padding:14px 16px;cursor:pointer">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;font-weight:600;color:#1F3A4D">{{ faq.q }}</span><span style="color:#B8934F;font-size:16px">{{ faq.toggleIcon }}</span></div>
+              <sc-if value="{{ faq.open }}" hint-placeholder-val="{{ false }}"><p style="font-size:13px;color:#5C6E78;margin:10px 0 0;line-height:1.6">{{ faq.a }}</p></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:300px;height:420px;border-radius:10px;overflow:hidden"><image-slot id="contact-map" shape="rect" placeholder="Map: River Park Estate, Lugbe, Abuja"></image-slot></div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ ADMIN ============ -->
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Admin" style="display:flex;min-height:calc(100vh - 74px);background:#F8F3EA">
+  <aside style="width:220px;flex:0 0 220px;background:#1F3A4D;padding:28px 0;display:flex;flex-direction:column;gap:2px">
+    <p style="color:#B8934F;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0 24px;margin:0 0 18px">Perch Admin</p>
+    <sc-for list="{{ adminTabs }}" as="tab" hint-placeholder-count="7">
+      <div onClick="{{ tab.selectHandler }}" style="padding:12px 24px;cursor:pointer;background:{{ tab.bg }};color:{{ tab.color }};font-size:13.5px;font-weight:600;border-left:3px solid {{ tab.borderColor }}">{{ tab.label }}</div>
+    </sc-for>
+    <div style="margin-top:auto;padding:20px 24px 0"><a onClick="{{ navHome }}" style="color:#B8CBD6;font-size:12.5px;cursor:pointer">&larr; Exit to Website</a></div>
+  </aside>
+
+  <div style="flex:1;padding:36px 40px;overflow:auto">
+    <sc-if value="{{ adminTabIsOverview }}" hint-placeholder-val="{{ true }}">
+      <h1 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 4px;font-weight:600">Dashboard Overview</h1>
+      <p style="font-size:13px;color:#8A97A0;margin:0 0 28px">Demo data &mdash; for illustration only</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px">
+        <sc-for list="{{ adminStats }}" as="stat" hint-placeholder-count="8">
+          <div style="background:#fff;border-radius:8px;padding:18px;box-shadow:0 2px 10px rgba(31,58,77,0.06)">
+            <p style="font-size:11.5px;color:#8A97A0;margin:0 0 6px;text-transform:uppercase;font-weight:600">{{ stat.label }}</p>
+            <p style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0;font-weight:600">{{ stat.value }}</p>
+          </div>
+        </sc-for>
+      </div>
+      <h3 style="font-size:15px;color:#1F3A4D;margin:0 0 14px;font-weight:600">Today's Arrivals &amp; Departures</h3>
+      <div style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(31,58,77,0.06)">
+        <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 0.8fr 0.8fr;padding:12px 18px;background:#F8F3EA;font-size:11.5px;font-weight:700;color:#5C6E78;text-transform:uppercase">
+          <span>Guest</span><span>Apartment</span><span>Dates</span><span>Type</span><span>Status</span>
+        </div>
+        <sc-for list="{{ adminArrivals }}" as="row" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 0.8fr 0.8fr;padding:14px 18px;border-top:1px solid rgba(31,58,77,0.06);font-size:13.5px;color:#3F4F58;align-items:center">
+            <span>{{ row.guest }}</span><span>{{ row.apt }}</span><span>{{ row.dates }}</span><span>{{ row.type }}</span>
+            <span style="background:{{ row.statusBg }};color:{{ row.statusColor }};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;width:fit-content">{{ row.status }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ adminTabIsCalendar }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 4px;font-weight:600">Reservation Calendar</h1>
+      <p style="font-size:13px;color:#8A97A0;margin:0 0 24px">{{ calendarMonthLabel }} &middot; Timeline by unit</p>
+      <div style="background:#fff;border-radius:8px;padding:20px;box-shadow:0 2px 10px rgba(31,58,77,0.06);overflow:auto">
+        <div style="display:grid;grid-template-columns:140px repeat(14,1fr);gap:2px;min-width:900px">
+          <div></div>
+          <sc-for list="{{ calendarDayHeaders }}" as="d" hint-placeholder-count="14"><div style="text-align:center;font-size:11px;color:#8A97A0;font-weight:600;padding:4px 0">{{ d }}</div></sc-for>
+          <sc-for list="{{ adminTimeline }}" as="unitRow" hint-placeholder-count="5">
+            <div style="font-size:13px;font-weight:600;color:#1F3A4D;display:flex;align-items:center;padding:6px 0">{{ unitRow.unitName }}</div>
+            <sc-for list="{{ unitRow.cells }}" as="c" hint-placeholder-count="14"><div style="height:30px;background:{{ c.bg }};border-radius:3px"></div></sc-for>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px;font-size:11.5px;color:#5C6E78">
+          <sc-for list="{{ calendarLegend }}" as="lg" hint-placeholder-count="6"><span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:{{ lg.color }};display:inline-block"></span>{{ lg.label }}</span></sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ adminTabIsApartments }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 4px;font-weight:600">Apartments</h1>
+      <p style="font-size:13px;color:#8A97A0;margin:0 0 24px">Manage apartment types, units, rates and amenities</p>
+      <div style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(31,58,77,0.06)">
+        <div style="display:grid;grid-template-columns:1.6fr 0.8fr 0.8fr 1fr 0.8fr 0.8fr;padding:12px 18px;background:#F8F3EA;font-size:11.5px;font-weight:700;color:#5C6E78;text-transform:uppercase">
+          <span>Apartment</span><span>Units</span><span>Guests</span><span>Nightly Rate</span><span>Status</span><span></span>
+        </div>
+        <sc-for list="{{ apartments }}" as="apt" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:1.6fr 0.8fr 0.8fr 1fr 0.8fr 0.8fr;padding:14px 18px;border-top:1px solid rgba(31,58,77,0.06);font-size:13.5px;color:#3F4F58;align-items:center">
+            <span style="font-weight:600;color:#1F3A4D">{{ apt.name }}</span><span>{{ apt.unitCount }}</span><span>{{ apt.maxGuests }}</span><span>{{ apt.nightlyFormatted }}</span>
+            <span style="background:#EAF1E8;color:#3E5233;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;width:fit-content">Active</span>
+            <a onClick="{{ apt.viewHandler }}" style="font-size:12.5px;color:#B8934F;font-weight:600;cursor:pointer">Edit</a>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ adminTabIsGuests }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 4px;font-weight:600">Guests</h1>
+      <p style="font-size:13px;color:#8A97A0;margin:0 0 24px">Guest profiles and booking history</p>
+      <div style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(31,58,77,0.06)">
+        <div style="display:grid;grid-template-columns:1.4fr 1.2fr 0.7fr 0.9fr;padding:12px 18px;background:#F8F3EA;font-size:11.5px;font-weight:700;color:#5C6E78;text-transform:uppercase">
+          <span>Guest</span><span>Contact</span><span>Stays</span><span>Balance</span>
+        </div>
+        <sc-for list="{{ adminGuests }}" as="g" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:1.4fr 1.2fr 0.7fr 0.9fr;padding:14px 18px;border-top:1px solid rgba(31,58,77,0.06);font-size:13.5px;color:#3F4F58;align-items:center">
+            <span style="font-weight:600;color:#1F3A4D">{{ g.name }}</span><span>{{ g.contact }}</span><span>{{ g.stays }}</span><span>{{ g.balance }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ adminTabIsPayments }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 4px;font-weight:600">Payments</h1>
+      <p style="font-size:13px;color:#8A97A0;margin:0 0 24px">Track payments, verification and refunds</p>
+      <div style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(31,58,77,0.06)">
+        <div style="display:grid;grid-template-columns:1fr 1.2fr 0.8fr 0.8fr 1fr;padding:12px 18px;background:#F8F3EA;font-size:11.5px;font-weight:700;color:#5C6E78;text-transform:uppercase">
+          <span>Reference</span><span>Guest</span><span>Amount</span><span>Method</span><span>Status</span>
+        </div>
+        <sc-for list="{{ adminPayments }}" as="p" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:1fr 1.2fr 0.8fr 0.8fr 1fr;padding:14px 18px;border-top:1px solid rgba(31,58,77,0.06);font-size:13.5px;color:#3F4F58;align-items:center">
+            <span>{{ p.ref }}</span><span>{{ p.guest }}</span><span>{{ p.amount }}</span><span>{{ p.method }}</span>
+            <span style="background:{{ p.statusBg }};color:{{ p.statusColor }};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;width:fit-content">{{ p.status }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ adminTabIsReports }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 4px;font-weight:600">Reports</h1>
+      <p style="font-size:13px;color:#8A97A0;margin:0 0 24px">Export operational and financial reports</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+        <sc-for list="{{ reportList }}" as="rep" hint-placeholder-count="10">
+          <div style="background:#fff;border-radius:8px;padding:18px;box-shadow:0 2px 10px rgba(31,58,77,0.06);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13.5px;color:#1F3A4D;font-weight:600">{{ rep }}</span>
+            <button style="background:#F8F3EA;color:#1F3A4D;border:none;padding:7px 12px;border-radius:4px;font-size:11.5px;font-weight:600;cursor:pointer">Export</button>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ adminTabIsRates }}" hint-placeholder-val="{{ false }}">
+      <h1 style="font-family:'Playfair Display',serif;font-size:24px;color:#1F3A4D;margin:0 0 4px;font-weight:600">Rates &amp; Pricing</h1>
+      <p style="font-size:13px;color:#B8934F;margin:0 0 24px;font-weight:600">Demo pricing shown &mdash; replace with official rate card before launch.</p>
+      <div style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(31,58,77,0.06)">
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;padding:12px 18px;background:#F8F3EA;font-size:11.5px;font-weight:700;color:#5C6E78;text-transform:uppercase">
+          <span>Apartment</span><span>Nightly</span><span>Weekend</span><span>Weekly</span><span>Cleaning Fee</span>
+        </div>
+        <sc-for list="{{ apartments }}" as="apt" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;padding:14px 18px;border-top:1px solid rgba(31,58,77,0.06);font-size:13.5px;color:#3F4F58;align-items:center">
+            <span style="font-weight:600;color:#1F3A4D">{{ apt.name }}</span><span>{{ apt.nightlyFormatted }}</span><span>{{ apt.weekendFormatted }}</span><span>{{ apt.weeklyFormatted }}</span><span>{{ apt.cleaningFormatted }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+</main>
+
+<!-- FOOTER -->
+<sc-if value="{{ !isAdmin }}" hint-placeholder-val="{{ true }}">
+<footer style="background:#1F3A4D;color:#DCE4E8;padding:64px 24px 28px">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;gap:40px;margin-bottom:40px">
+    <div style="flex:1.4;min-width:240px">
+      <img src="./assets/perch-logo.jpeg" alt="The Perch" style="height:52px;width:auto;object-fit:contain;background:#fff;border-radius:6px;padding:4px 8px;margin-bottom:12px"/>
+      <p style="font-family:'Playfair Display',serif;font-style:italic;color:#B8934F;font-size:15px;margin:0 0 16px">Slice of Paradise</p>
+      <p style="font-size:13px;line-height:1.7;margin:0;color:#B8CBD6">Plot 372 Vincent Azike Street, Cluster 1,<br/>River Park Estate, Lugbe, Abuja, Nigeria</p>
+    </div>
+    <div style="flex:1;min-width:160px">
+      <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fff;margin:0 0 16px">Navigate</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a onClick="{{ navHome }}" style="font-size:13.5px;color:#B8CBD6;cursor:pointer">Home</a>
+        <a onClick="{{ navApartments }}" style="font-size:13.5px;color:#B8CBD6;cursor:pointer">Apartments</a>
+        <a onClick="{{ navGallery }}" style="font-size:13.5px;color:#B8CBD6;cursor:pointer">Gallery</a>
+        <a onClick="{{ navAbout }}" style="font-size:13.5px;color:#B8CBD6;cursor:pointer">About Us</a>
+        <a onClick="{{ navContact }}" style="font-size:13.5px;color:#B8CBD6;cursor:pointer">Contact</a>
+      </div>
+    </div>
+    <div style="flex:1;min-width:160px">
+      <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fff;margin:0 0 16px">Contact</p>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#B8CBD6">
+        <a href="tel:07073318012" style="color:#B8CBD6">0707 331 8012</a>
+        <a href="{{ waLink }}" target="_blank" style="color:#B8CBD6">WhatsApp Us</a>
+        <span>reservations@theperch.example</span>
+      </div>
+    </div>
+    <div style="flex:1;min-width:160px">
+      <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fff;margin:0 0 16px">Policies</p>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:#B8CBD6">
+        <span>Terms &amp; Conditions</span>
+        <span>Privacy Policy</span>
+        <span>Cancellation Policy</span>
+        <span>House Rules</span>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:1280px;margin:0 auto;border-top:1px solid rgba(255,255,255,0.12);padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <p style="font-size:12px;color:#8CA3AF;margin:0">&copy; 2026 The Perch. All rights reserved.</p>
+    <a onClick="{{ navAdmin }}" style="font-size:11px;color:#5C7488;cursor:pointer">Admin Login</a>
+  </div>
+</footer>
+</sc-if>
+
+<!-- STICKY MOBILE CTA -->
+<sc-if value="{{ !isAdmin }}" hint-placeholder-val="{{ true }}">
+<div data-mobile-only="1" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid rgba(31,58,77,0.12);padding:10px 16px;gap:10px;z-index:60;box-shadow:0 -4px 20px rgba(0,0,0,0.08)">
+  <button onClick="{{ navBooking }}" style="flex:1;background:#1F3A4D;color:#fff;border:none;padding:12px;border-radius:4px;font-size:13.5px;font-weight:600;cursor:pointer">Book Now</button>
+  <a href="{{ waLink }}" target="_blank" style="flex:1;text-align:center;background:#EAF1E8;color:#3E5233;padding:12px;border-radius:4px;font-size:13.5px;font-weight:600">WhatsApp</a>
+</div>
+</sc-if>
+
+</div>
+<style>
+@media (min-width:900px){
+  [data-desktop-nav]{display:flex !important}
+  [data-desktop-only]{display:flex !important}
+  [data-mobile-only]{display:none !important}
+}
+@media (max-width:899px){
+  [data-mobile-only]{display:flex !important}
+}
+</style>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const NAIRA = new Intl.NumberFormat('en-NG',{style:'currency',currency:'NGN',maximumFractionDigits:0});
+function fmt(n){ return NAIRA.format(n).replace('NGN','\u20a6'); }
+function daysBetween(a,b){ if(!a||!b) return 0; const d1=new Date(a), d2=new Date(b); const diff=Math.round((d2-d1)/86400000); return diff>0?diff:0; }
+function dateList(checkIn,checkOut){ const out=[]; if(!checkIn||!checkOut) return out; let d=new Date(checkIn); const end=new Date(checkOut); while(d<end){ out.push(new Date(d)); d=new Date(d.getTime()+86400000); } return out; }
+
+const APT_DATA = [
+  {id:1,name:'Robin',type:'Downstairs Room',maxGuests:2,bedrooms:1,bathrooms:'1 Bathroom',beds:'1 Queen Bed',size:'Small Room',unitCount:1,
+    shortDesc:'A cozy downstairs room for solo travellers and couples.',
+    longDesc:'A cozy, self-contained downstairs room designed for solo travellers and couples who want comfort without excess. A calm, quiet base for business or leisure in Lugbe.',
+    amenities:['Wi-Fi','Air Conditioning','Smart TV','24/7 Power Backup','Housekeeping','Hot Water','Secure Parking'],
+    nightly:55000, weekend:60000, weekly:340000, monthly:1150000, cleaning:8000, deposit:20000, minStay:1, checkinTime:'2:00 PM', checkoutTime:'11:00 AM'},
+  {id:2,name:'Weaver',type:'Downstairs Room',maxGuests:2,bedrooms:1,bathrooms:'1 Bathroom',beds:'1 Queen Bed',size:'Small Room',unitCount:1,
+    shortDesc:'A cozy downstairs room for solo travellers and couples.',
+    longDesc:'A cozy, self-contained downstairs room designed for solo travellers and couples who want comfort without excess. A calm, quiet base for business or leisure in Lugbe.',
+    amenities:['Wi-Fi','Air Conditioning','Smart TV','24/7 Power Backup','Housekeeping','Hot Water','Secure Parking'],
+    nightly:55000, weekend:60000, weekly:340000, monthly:1150000, cleaning:8000, deposit:20000, minStay:1, checkinTime:'2:00 PM', checkoutTime:'11:00 AM'},
+  {id:3,name:'Sunbird',type:'Downstairs Room',maxGuests:2,bedrooms:1,bathrooms:'1 Bathroom',beds:'1 Queen Bed',size:'Small Room',unitCount:1,
+    shortDesc:'A cozy downstairs room for solo travellers and couples.',
+    longDesc:'A cozy, self-contained downstairs room designed for solo travellers and couples who want comfort without excess. A calm, quiet base for business or leisure in Lugbe.',
+    amenities:['Wi-Fi','Air Conditioning','Smart TV','24/7 Power Backup','Housekeeping','Hot Water','Secure Parking'],
+    nightly:55000, weekend:60000, weekly:340000, monthly:1150000, cleaning:8000, deposit:20000, minStay:1, checkinTime:'2:00 PM', checkoutTime:'11:00 AM'},
+  {id:4,name:'Hornbill',type:'Upstairs Room',maxGuests:2,bedrooms:1,bathrooms:'1 Bathroom',beds:'1 King Bed',size:'Upstairs Room',unitCount:1,photo:'./assets/hornbill-main.png',
+    shortDesc:'An upstairs room with a private balcony overlooking the estate.',
+    longDesc:'An upstairs room with a private balcony overlooking the estate. Ideal for couples or solo guests staying longer.',
+    amenities:['Wi-Fi','Air Conditioning','Smart TV','24/7 Power Backup','Housekeeping','Private Balcony','Secure Parking','Hot Water'],
+    nightly:75000, weekend:82000, weekly:460000, monthly:1600000, cleaning:10000, deposit:30000, minStay:1, checkinTime:'2:00 PM', checkoutTime:'11:00 AM'},
+  {id:5,name:'Kingfisher',type:'Upstairs Room — Largest',maxGuests:3,bedrooms:1,bathrooms:'1 Bathroom',beds:'1 King Bed',size:'Largest Room',unitCount:1,
+    shortDesc:'The biggest upstairs room, with extra space and premium furnishing.',
+    longDesc:'One of our two largest rooms, upstairs with extra space and premium furnishing. Well suited to guests who want the most comfortable stay on offer.',
+    amenities:['Wi-Fi','Air Conditioning','Smart TV','24/7 Power Backup','Housekeeping','Private Balcony','Secure Parking','Premium Furnishing','Hot Water'],
+    nightly:90000, weekend:98000, weekly:560000, monthly:1950000, cleaning:12000, deposit:35000, minStay:1, checkinTime:'2:00 PM', checkoutTime:'11:00 AM'},
+  {id:6,name:'Turaco',type:'Upstairs Room — Largest',maxGuests:3,bedrooms:1,bathrooms:'1 Bathroom',beds:'1 King Bed',size:'Largest Room',unitCount:1,
+    shortDesc:'The biggest upstairs room, with extra space and premium furnishing.',
+    longDesc:'One of our two largest rooms, upstairs with extra space and premium furnishing. Well suited to guests who want the most comfortable stay on offer.',
+    amenities:['Wi-Fi','Air Conditioning','Smart TV','24/7 Power Backup','Housekeeping','Private Balcony','Secure Parking','Premium Furnishing','Hot Water'],
+    nightly:90000, weekend:98000, weekly:560000, monthly:1950000, cleaning:12000, deposit:35000, minStay:1, checkinTime:'2:00 PM', checkoutTime:'11:00 AM'}
+];
+
+const WHY_STAY = [
+  {title:'Serene & Secure',desc:'A gated, guarded estate away from the noise of the city.',icon:'shield'},
+  {title:'Reliable Power',desc:'24/7 backup power so your stay is never interrupted.',icon:'bolt'},
+  {title:'Fast Wi-Fi',desc:'Dependable connectivity for work and streaming.',icon:'wifi'},
+  {title:'Convenient Location',desc:'Minutes from Abuja Airport and central Abuja.',icon:'pin'},
+  {title:'Attentive Housekeeping',desc:'Professionally cleaned before every arrival.',icon:'sparkle'},
+  {title:'Easy Booking Support',desc:'Reach us anytime by phone or WhatsApp.',icon:'chat'}
+];
+const ICONS = {
+  shield:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F3A4D" stroke-width="1.8"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/></svg>',
+  bolt:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F3A4D" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  wifi:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F3A4D" stroke-width="1.8"><path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><line x1="12" y1="20" x2="12" y2="20"/></svg>',
+  pin:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F3A4D" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  sparkle:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F3A4D" stroke-width="1.8"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/></svg>',
+  chat:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F3A4D" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>'
+};
+
+const LANDMARKS = [
+  {name:'Nnamdi Azikiwe International Airport',distance:'15 mins'},
+  {name:'Lugbe Central Market',distance:'8 mins'},
+  {name:'Airport Road',distance:'5 mins'}
+];
+
+const GALLERY_IMAGES = [
+  {slotId:'gal-hornbill-2',category:'bedrooms',caption:'Hornbill Room',rowSpan:1,photo:'./assets/gallery-hornbill-2.png'},
+  {slotId:'gal-hornbill-3',category:'bedrooms',caption:'Hornbill Room',rowSpan:1,photo:'./assets/gallery-hornbill-3.png'},
+  {slotId:'gal-bed-1',category:'bedrooms',caption:'Master Bedroom, The Roost',rowSpan:2},
+  {slotId:'gal-bed-2',category:'bedrooms',caption:'Bedroom, The Aviary',rowSpan:1},
+  {slotId:'gal-living-1',category:'living',caption:'Living Area, The Nestled Suite',rowSpan:1},
+  {slotId:'gal-living-2',category:'living',caption:'Lounge, The Sanctuary',rowSpan:2},
+  {slotId:'gal-kitchen-1',category:'kitchens',caption:'Full Kitchen, The Aviary',rowSpan:1},
+  {slotId:'gal-bath-1',category:'bathrooms',caption:'Bathroom, The Roost',rowSpan:1},
+  {slotId:'gal-ext-1',category:'exterior',caption:'Building Exterior',rowSpan:1},
+  {slotId:'gal-fac-1',category:'facilities',caption:'Secure Parking',rowSpan:1},
+  {slotId:'gal-sur-1',category:'surroundings',caption:'River Park Estate Grounds',rowSpan:1},
+  {slotId:'gal-kitchen-2',category:'kitchens',caption:'Kitchenette, The Nest Studio',rowSpan:1}
+];
+const GALLERY_CATS = [
+  {key:'all',label:'All'},{key:'bedrooms',label:'Bedrooms'},{key:'living',label:'Living Areas'},{key:'kitchens',label:'Kitchens'},
+  {key:'bathrooms',label:'Bathrooms'},{key:'exterior',label:'Exterior'},{key:'facilities',label:'Facilities'},{key:'surroundings',label:'Surroundings'}
+];
+
+const FAQS = [
+  {q:'What time is check-in and check-out?',a:'Check-in is from 2:00 PM and check-out is by 11:00 AM. Early check-in or late check-out may be arranged in advance, subject to availability.'},
+  {q:'Is a security deposit required?',a:'Yes, a refundable security deposit is required for most apartments and is returned after a satisfactory check-out inspection.'},
+  {q:'What payment methods do you accept?',a:'We accept Paystack, Flutterwave, bank transfer, and pay-on-arrival where enabled for your booking.'},
+  {q:'Can I cancel or change my booking?',a:'Yes. Cancellations made at least 48 hours before check-in receive a full refund. Contact us to make changes to your dates.'}
+];
+
+class Component extends DCLogic {
+  state = {
+    screen:'home', mobileMenuOpen:false,
+    avail:{checkIn:'',checkOut:'',guests:'2',adults:'2',children:'0'},
+    filters:{checkIn:'',checkOut:'',guests:'0',bedrooms:'-1',maxPrice:'0'},
+    detailId:1,
+    booking:{step:1,checkIn:'',checkOut:'',adults:'2',children:'0',apartmentId:null,
+      guest:{name:'',email:'',phone:'',whatsapp:'',arrival:'',purpose:'',requests:''},
+      payment:'transfer'},
+    contactForm:{name:'',email:'',phone:'',message:''}, contactSent:false,
+    adminTab:'overview',
+    galleryFilter:'all', lightboxIdx:null,
+    faqOpen:{}, addressCopied:false, bookingRef:null
+  };
+
+  navTo = (screen) => this.setState({screen, mobileMenuOpen:false});
+  toggleMobileMenu = () => this.setState(s=>({mobileMenuOpen:!s.mobileMenuOpen}));
+
+  setAvailField(field, val){ this.setState(s=>({avail:{...s.avail, [field]:val}})); }
+  setFilterField(field, val){ this.setState(s=>({filters:{...s.filters, [field]:val}})); }
+  setBookingField(field, val){ this.setState(s=>({booking:{...s.booking, [field]:val}})); }
+  setGuestField(field, val){ this.setState(s=>({booking:{...s.booking, guest:{...s.booking.guest, [field]:val}}})); }
+
+  selectApartment(id){ this.setState({screen:'detail', detailId:id}); }
+  checkApartmentAvailability(id){ this.setState({screen:'availability'}); }
+
+  priceBreakdown(apt, checkIn, checkOut){
+    if(!apt) return {valid:false};
+    const nights = daysBetween(checkIn, checkOut);
+    if(nights<=0) return {valid:false};
+    if(nights < apt.minStay) return {valid:false, tooShort:true};
+    const days = dateList(checkIn, checkOut);
+    let weekendNights=0, standardNights=0;
+    days.forEach(d=>{ const dow=d.getDay(); if(dow===5||dow===6) weekendNights++; else standardNights++; });
+    const standardTotal = standardNights*apt.nightly;
+    const weekendTotal = weekendNights*apt.weekend;
+    const subtotal = standardTotal+weekendTotal;
+    const total = subtotal+apt.cleaning+apt.deposit;
+    return {valid:true, tooShort:false, nights, standardNights, weekendNights, hasWeekend:weekendNights>0,
+      standardTotalFormatted:fmt(standardTotal), weekendTotalFormatted:fmt(weekendTotal),
+      cleaningFormatted:fmt(apt.cleaning), depositFormatted:fmt(apt.deposit),
+      subtotal, total, totalFormatted:fmt(total), stayOnlyTotal: subtotal, stayOnlyTotalFormatted: fmt(subtotal)};
+  }
+
+  aptWithHandlers(apt, opts={}){
+    const self=this;
+    return {
+      ...apt,
+      bedroomsLabel: apt.bedrooms===0? 'Studio' : apt.bedrooms+' Bedroom'+(apt.bedrooms>1?'s':''),
+      nightlyFormatted: fmt(apt.nightly), weekendFormatted: fmt(apt.weekend), weeklyFormatted: fmt(apt.weekly), cleaningFormatted: fmt(apt.cleaning),
+      topAmenities: apt.amenities.slice(0,3),
+      slotId:'home-apt-'+apt.id, slotIdList:'list-apt-'+apt.id, slotIdAvail:'avail-apt-'+apt.id, slotIdBook:'book-apt-'+apt.id, slotRelated:'rel-apt-'+apt.id,
+      placeholderText: apt.name+' photo', photo: apt.photo || null,
+      viewHandler: ()=>self.selectApartment(apt.id),
+      checkHandler: ()=>self.checkApartmentAvailability(apt.id),
+      selectHandler: opts.selectHandler ? opts.selectHandler(apt) : undefined
+    };
+  }
+
+  renderVals(){
+    const s = this.state;
+    const isHome=s.screen==='home', isApartments=s.screen==='apartments', isDetail=s.screen==='detail',
+      isAvailability=s.screen==='availability', isBooking=s.screen==='booking', isGallery=s.screen==='gallery',
+      isAbout=s.screen==='about', isContact=s.screen==='contact', isAdmin=s.screen==='admin';
+
+    const navColor = (scr)=> s.screen===scr ? '#B8934F' : '#1F3A4D';
+    const waLink = 'https://wa.me/2347073318012';
+
+    const apartments = APT_DATA.map(a=>this.aptWithHandlers(a));
+
+    // filters (apartments page)
+    const f = s.filters;
+    const filteredApartments = apartments.filter(a=>{
+      if(Number(f.guests)>0 && a.maxGuests < Number(f.guests)) return false;
+      if(Number(f.bedrooms)>=0 && a.bedrooms !== Number(f.bedrooms)) return false;
+      if(Number(f.maxPrice)>0 && a.nightly > Number(f.maxPrice)) return false;
+      return true;
+    }).map(a=>{
+      const hasRange = f.checkIn && f.checkOut;
+      return {...a, availBadgeText: hasRange? 'Available' : 'Check Dates', availBadgeBg: hasRange? '#EAF1E8':'#F8F3EA', availBadgeColor: hasRange? '#3E5233':'#8A97A0'};
+    });
+
+    // detail
+    const selectedAptRaw = APT_DATA.find(a=>a.id===s.detailId) || APT_DATA[0];
+    const selectedApt = {...this.aptWithHandlers(selectedAptRaw), minStayLabel: selectedAptRaw.minStay+' night'+(selectedAptRaw.minStay>1?'s':''),
+      slotDetailMain:'detail-main-'+selectedAptRaw.id, slotDetail2:'detail-2-'+selectedAptRaw.id, slotDetail3:'detail-3-'+selectedAptRaw.id,
+      detailMainPhoto: selectedAptRaw.photo || null};
+    const detailBreakdown = this.priceBreakdown(selectedAptRaw, s.booking.checkIn, s.booking.checkOut);
+    const relatedApartments = apartments.filter(a=>a.id!==selectedAptRaw.id).slice(0,3);
+
+    // simple calendar mock (current month)
+    const now = new Date();
+    const year = now.getFullYear(), month = now.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const calendarCells = [];
+    for(let i=0;i<firstDay;i++) calendarCells.push({day:'', bg:'transparent', color:'transparent'});
+    for(let d=1; d<=daysInMonth; d++){
+      let bg='#EAF1E8', color='#3E5233';
+      if([5,12,19].includes(d)){ bg='#B8934F'; color='#fff'; }
+      else if([8,9,15,16].includes(d)){ bg='#1F3A4D'; color='#fff'; }
+      else if([22,23].includes(d)){ bg='#D8D3C6'; color='#5C6E78'; }
+      calendarCells.push({day:d, bg, color});
+    }
+    const calendarMonthLabel = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    const calendarWeekdays = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+    // availability page
+    const av = s.avail;
+    let availError=null;
+    if(av.checkIn && av.checkOut && new Date(av.checkOut)<=new Date(av.checkIn)) availError='Check-out date must be after check-in date.';
+    const totalGuests = Number(av.adults||1)+Number(av.children||0);
+    const availValidRange = !!(av.checkIn && av.checkOut) && !availError;
+    const availApartments = apartments.filter(a=>a.maxGuests>=totalGuests).map(a=>{
+      const bd = this.priceBreakdown(APT_DATA.find(x=>x.id===a.id), av.checkIn, av.checkOut);
+      return {...a, stayTotalFormatted: bd.valid? bd.stayOnlyTotalFormatted : '—',
+        selectHandler: ()=>{ this.setState(st=>({screen:'booking', booking:{...st.booking, checkIn:av.checkIn, checkOut:av.checkOut, adults:av.adults, children:av.children, apartmentId:a.id, step:2}})); } };
+    });
+    const availResultsLabel = availError ? '' : (availValidRange ? availApartments.length+' apartment(s) available for your dates' : 'Select your dates to see live availability');
+
+    // booking flow
+    const b = s.booking;
+    const stepDefs = [{n:1,l:'Dates'},{n:2,l:'Apartment'},{n:3,l:'Guest Info'},{n:4,l:'Payment'},{n:5,l:'Confirmation'}];
+    const bookingSteps = stepDefs.map((sd,i)=>({num:sd.n, label:sd.l,
+      circleBg: b.step>=sd.n? '#1F3A4D':'#E8E4DA', circleColor: b.step>=sd.n? '#fff':'#8A97A0',
+      labelColor: b.step>=sd.n? '#1F3A4D':'#8A97A0', showConnector: i<stepDefs.length-1}));
+
+    let bookingDateError=null;
+    const bn = daysBetween(b.checkIn,b.checkOut);
+    if(b.checkIn && new Date(b.checkIn) < new Date(new Date().toDateString())) bookingDateError='Check-in date cannot be in the past.';
+    else if(b.checkIn && b.checkOut && bn<=0) bookingDateError='Check-out date must be after check-in date.';
+
+    const bookingApartmentOptions = apartments.map(a=>{
+      const bd = this.priceBreakdown(APT_DATA.find(x=>x.id===a.id), b.checkIn, b.checkOut);
+      return {...a, nights:bn, stayTotalFormatted: bd.valid? bd.stayOnlyTotalFormatted : fmt(a.nightly*Math.max(bn,1)),
+        borderColor: b.apartmentId===a.id? '#B8934F':'rgba(31,58,77,0.1)',
+        selectHandler: ()=> this.setState(st=>({booking:{...st.booking, apartmentId:a.id}}))};
+    });
+    const bookingNoApartmentSelected = !b.apartmentId;
+    const bookingStep3ButtonBg = bookingNoApartmentSelected? '#B9C3C8':'#1F3A4D';
+
+    const guestComplete = b.guest.name && b.guest.email && b.guest.phone;
+    const bookingGuestIncomplete = !guestComplete;
+    const bookingStep4ButtonBg = bookingGuestIncomplete? '#B9C3C8':'#1F3A4D';
+
+    const selectedBookingApt = APT_DATA.find(a=>a.id===b.apartmentId);
+    const bookingFinalBreakdown = selectedBookingApt? this.priceBreakdown(selectedBookingApt, b.checkIn, b.checkOut) : {valid:false};
+    const bookingConfirmApt = selectedBookingApt ? this.aptWithHandlers(selectedBookingApt) : {name:''};
+
+    const paymentOptionsDefs = [
+      {key:'paystack', label:'Pay with Paystack', desc:'Secure card payment via Paystack'},
+      {key:'flutterwave', label:'Pay with Flutterwave', desc:'Secure card payment via Flutterwave'},
+      {key:'transfer', label:'Bank Transfer', desc:'Pay via bank transfer, upload evidence for verification'},
+      {key:'arrival', label:'Pay on Arrival', desc:'Available where enabled by management'}
+    ];
+    const paymentOptions = paymentOptionsDefs.map(p=>({...p,
+      borderColor: b.payment===p.key? '#B8934F':'rgba(31,58,77,0.1)',
+      dotBorder: b.payment===p.key? '#B8934F':'#C7CDD1', dotFill: b.payment===p.key? '#B8934F':'transparent',
+      selectHandler: ()=> this.setBookingField('payment', p.key)}));
+    const paymentIsTransfer = b.payment==='transfer';
+    const paymentSubmitLabel = paymentIsTransfer? 'Submit & Upload Evidence' : 'Confirm & Pay';
+    const paymentIsTransferConfirmTitle = paymentIsTransfer? 'Booking Received — Awaiting Verification' : 'Booking Confirmed!';
+
+    const summaryBd = selectedBookingApt ? this.priceBreakdown(selectedBookingApt, b.checkIn, b.checkOut) : {valid:false};
+    const summaryApt = selectedBookingApt ? {name:selectedBookingApt.name} : null;
+    const summaryNoApt = !selectedBookingApt;
+    const summaryDatesLabel = (b.checkIn||'—')+' \u2192 '+(b.checkOut||'—');
+
+    // gallery
+    const galleryFilteredImages = GALLERY_IMAGES.filter(g=> s.galleryFilter==='all' || g.category===s.galleryFilter)
+      .map((g,i)=>({...g, openHandler: ()=> this.setState({lightboxIdx:i})}));
+    const galleryCategories = GALLERY_CATS.map(c=>({...c,
+      bg: s.galleryFilter===c.key? '#1F3A4D':'#fff', color: s.galleryFilter===c.key? '#fff':'#1F3A4D',
+      borderColor: s.galleryFilter===c.key? '#1F3A4D':'rgba(31,58,77,0.2)',
+      selectHandler: ()=> this.setState({galleryFilter:c.key, lightboxIdx:null})}));
+    const lightboxImage = (s.lightboxIdx!==null && galleryFilteredImages[s.lightboxIdx]) ? galleryFilteredImages[s.lightboxIdx] : null;
+
+    // contact
+    const faqs = FAQS.map((f,i)=>({...f, open: !!s.faqOpen[i], toggleIcon: s.faqOpen[i]? '\u2212':'+',
+      toggleHandler: ()=> this.setState(st=>({faqOpen:{...st.faqOpen, [i]: !st.faqOpen[i]}}))}));
+
+    // admin
+    const adminTabDefs = [
+      {key:'overview',label:'Overview'},{key:'calendar',label:'Calendar'},{key:'apartments',label:'Apartments'},
+      {key:'rates',label:'Rates & Pricing'},{key:'guests',label:'Guests'},{key:'payments',label:'Payments'},{key:'reports',label:'Reports'}
+    ];
+    const adminTabs = adminTabDefs.map(t=>({...t,
+      bg: s.adminTab===t.key? 'rgba(184,147,79,0.15)':'transparent', color: s.adminTab===t.key? '#fff':'#B8CBD6',
+      borderColor: s.adminTab===t.key? '#B8934F':'transparent',
+      selectHandler: ()=> this.setState({adminTab:t.key})}));
+    const adminStats = [
+      {label:'Arrivals Today',value:'3'},{label:'Departures Today',value:'2'},{label:'Current Guests',value:'11'},
+      {label:'Available Units Today',value:'6'},{label:'Pending Reservations',value:'4'},{label:'Awaiting Payment',value:'2'},
+      {label:'Monthly Revenue',value:fmt(4820000)},{label:'Occupancy',value:'68%'}
+    ];
+    const adminArrivals = [
+      {guest:'Chidinma O.',apt:'The Roost',dates:'Aug 6 \u2192 Aug 9',type:'Arrival',status:'Confirmed',statusBg:'#EAF1E8',statusColor:'#3E5233'},
+      {guest:'James Okon',apt:'The Aviary',dates:'Aug 6 \u2192 Aug 12',type:'Arrival',status:'Awaiting Payment',statusBg:'#F8ECD6',statusColor:'#8A6A2A'},
+      {guest:'Grace A.',apt:'The Nest Studio',dates:'Aug 3 \u2192 Aug 6',type:'Departure',status:'Checked In',statusBg:'#E6EEF3',statusColor:'#1F3A4D'},
+      {guest:'Corporate — Zenera Ltd',apt:'The Sanctuary',dates:'Aug 4 \u2192 Aug 6',type:'Departure',status:'Checked In',statusBg:'#E6EEF3',statusColor:'#1F3A4D'},
+      {guest:'Tunde B.',apt:'The Nestled Suite',dates:'Aug 6 \u2192 Aug 8',type:'Arrival',status:'Confirmed',statusBg:'#EAF1E8',statusColor:'#3E5233'}
+    ];
+    const adminGuests = [
+      {name:'Chidinma O.',contact:'0803 xxx xx12',stays:3,balance:fmt(0)},
+      {name:'James Okon',contact:'0806 xxx xx45',stays:1,balance:fmt(95000)},
+      {name:'Grace A.',contact:'0701 xxx xx78',stays:5,balance:fmt(0)},
+      {name:'Zenera Ltd (Corporate)',contact:'0812 xxx xx01',stays:8,balance:fmt(0)},
+      {name:'Tunde B.',contact:'0909 xxx xx33',stays:2,balance:fmt(40000)},
+      {name:'Amaka N.',contact:'0705 xxx xx90',stays:1,balance:fmt(0)}
+    ];
+    const adminPayments = [
+      {ref:'PRC-10245',guest:'Chidinma O.',amount:fmt(195000),method:'Paystack',status:'Verified',statusBg:'#EAF1E8',statusColor:'#3E5233'},
+      {ref:'PRC-10246',guest:'James Okon',amount:fmt(95000),method:'Bank Transfer',status:'Under Review',statusBg:'#F8ECD6',statusColor:'#8A6A2A'},
+      {ref:'PRC-10247',guest:'Grace A.',amount:fmt(148000),method:'Flutterwave',status:'Verified',statusBg:'#EAF1E8',statusColor:'#3E5233'},
+      {ref:'PRC-10248',guest:'Zenera Ltd',amount:fmt(560000),method:'Bank Transfer',status:'Verified',statusBg:'#EAF1E8',statusColor:'#3E5233'},
+      {ref:'PRC-10249',guest:'Tunde B.',amount:fmt(40000),method:'Pay on Arrival',status:'Pending',statusBg:'#F1E9E4',statusColor:'#8A5A3A'},
+      {ref:'PRC-10250',guest:'Amaka N.',amount:fmt(65000),method:'Paystack',status:'Verified',statusBg:'#EAF1E8',statusColor:'#3E5233'}
+    ];
+    const reportList = ['Daily Arrivals & Departures','Occupancy Report','Apartment Performance','Booking Sources','Revenue by Apartment','Revenue by Date Range','Outstanding Payments','Cancelled Bookings','Guest History','Discounts Granted'];
+    const calendarDayHeaders = Array.from({length:14},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()+i); return d.toLocaleDateString('en-US',{day:'numeric'}); });
+    const legendDefs = [{label:'Confirmed',color:'#1F3A4D'},{label:'Awaiting Payment',color:'#B8934F'},{label:'Checked In',color:'#5C7A52'},{label:'Blocked/Maintenance',color:'#D8D3C6'},{label:'Available',color:'#EAF1E8'}];
+    const calendarLegend = legendDefs;
+    const adminTimeline = apartments.map((a,ri)=>({unitName:a.name, cells: Array.from({length:14},(_,ci)=>{
+      const seed=(ri*7+ci)%9; let bg='#EAF1E8';
+      if(seed===2||seed===3) bg='#1F3A4D'; else if(seed===5) bg='#B8934F'; else if(seed===7) bg='#D8D3C6'; else if(seed===1) bg='#DCE9D8';
+      return {bg};
+    })}));
+
+    return {
+      isHome,isApartments,isDetail,isAvailability,isBooking,isGallery,isAbout,isContact,isAdmin,
+      mobileMenuOpen:s.mobileMenuOpen, toggleMobileMenu:this.toggleMobileMenu,
+      navHome:()=>this.navTo('home'), navApartments:()=>this.navTo('apartments'), navAvailability:()=>this.navTo('availability'),
+      navGallery:()=>this.navTo('gallery'), navAbout:()=>this.navTo('about'), navContact:()=>this.navTo('contact'),
+      navBooking:()=>this.setState({screen:'booking'}), navAdmin:()=>this.navTo('admin'),
+      navHomeColor:navColor('home'), navApartmentsColor:navColor('apartments'), navAvailabilityColor:navColor('availability'),
+      navGalleryColor:navColor('gallery'), navAboutColor:navColor('about'), navContactColor:navColor('contact'),
+      waLink,
+      avail:s.avail, setAvailCheckIn:(e)=>this.setAvailField('checkIn',e.target.value), setAvailCheckOut:(e)=>this.setAvailField('checkOut',e.target.value),
+      setAvailGuests:(e)=>this.setAvailField('guests',e.target.value), setAvailAdults:(e)=>this.setAvailField('adults',e.target.value), setAvailChildren:(e)=>this.setAvailField('children',e.target.value),
+      apartments, whyStay: WHY_STAY.map(w=>({...w, iconHtml:{__html:ICONS[w.icon]}})),
+      landmarks: LANDMARKS, copyAddress: ()=>{ navigator.clipboard && navigator.clipboard.writeText('Plot 372 Vincent Azike Street, Cluster 1, River Park Estate, Lugbe, Abuja'); this.setState({addressCopied:true}); setTimeout(()=>this.setState({addressCopied:false}),1800); },
+      copyAddressLabel: s.addressCopied? 'Copied!' : 'Copy Address',
+
+      filters:s.filters, setFilterCheckIn:(e)=>this.setFilterField('checkIn',e.target.value), setFilterCheckOut:(e)=>this.setFilterField('checkOut',e.target.value),
+      setFilterGuests:(e)=>this.setFilterField('guests',e.target.value), setFilterBedrooms:(e)=>this.setFilterField('bedrooms',e.target.value), setFilterMaxPrice:(e)=>this.setFilterField('maxPrice',e.target.value),
+      resetFilters: ()=>this.setState({filters:{checkIn:'',checkOut:'',guests:'0',bedrooms:'-1',maxPrice:'0'}}),
+      filteredApartments, filteredCountLabel: filteredApartments.length+' of '+apartments.length+' apartments match your filters',
+
+      selectedApt, detailBreakdown, relatedApartments,
+      booking:{...s.booking}, setBookingCheckIn:(e)=>this.setBookingField('checkIn',e.target.value), setBookingCheckOut:(e)=>this.setBookingField('checkOut',e.target.value),
+      setBookingGuests:(e)=>this.setBookingField('adults',e.target.value), setBookingAdults:(e)=>this.setBookingField('adults',e.target.value), setBookingChildren:(e)=>this.setBookingField('children',e.target.value),
+      proceedToBookingFromDetail: ()=> this.setState(st=>({screen:'booking', booking:{...st.booking, apartmentId:selectedAptRaw.id, step: st.booking.checkIn && st.booking.checkOut ? 2 : 1}})),
+
+      calendarMonthLabel, calendarWeekdays, calendarCells,
+
+      availError, availValidRange, availApartments, availResultsLabel,
+
+      bookingSteps, bookingStepIs1:b.step===1, bookingStepIs2:b.step===2, bookingStepIs3:b.step===3, bookingStepIs4:b.step===4, bookingStepIs5:b.step===5,
+      bookingDateError,
+      bookingGoStep1:()=>this.setBookingField('step',1), bookingGoStep2:()=>{ if(!bookingDateError && b.checkIn && b.checkOut) this.setBookingField('step',2); },
+      bookingGoStep3:()=>{ if(!bookingNoApartmentSelected) this.setBookingField('step',3); }, bookingGoStep4:()=>{ if(!bookingGuestIncomplete) this.setBookingField('step',4); },
+      bookingGoStep5:()=>{ const ref='PRC-'+Math.floor(10000+Math.random()*89999); this.setState(st=>({booking:{...st.booking, step:5}, bookingRef: st.bookingRef || ref})); },
+      bookingApartmentOptions, bookingNoApartmentSelected, bookingStep3ButtonBg,
+      setGuestName:(e)=>this.setGuestField('name',e.target.value), setGuestEmail:(e)=>this.setGuestField('email',e.target.value), setGuestPhone:(e)=>this.setGuestField('phone',e.target.value),
+      setGuestWhatsapp:(e)=>this.setGuestField('whatsapp',e.target.value), setGuestArrival:(e)=>this.setGuestField('arrival',e.target.value), setGuestPurpose:(e)=>this.setGuestField('purpose',e.target.value), setGuestRequests:(e)=>this.setGuestField('requests',e.target.value),
+      bookingGuestIncomplete, bookingStep4ButtonBg, summaryApt, summaryNoApt, summaryDatesLabel, summaryBd,
+      paymentOptions, paymentIsTransfer, paymentSubmitLabel, paymentIsTransferConfirmTitle,
+      bookingReference: s.bookingRef || 'PRC-00000', bookingConfirmApt, bookingFinalBreakdown,
+
+      galleryCategories, galleryFilteredImages, lightboxImage, closeLightbox: ()=>this.setState({lightboxIdx:null}), stopPropagation: (e)=>e.stopPropagation(),
+
+      contactForm:s.contactForm, setContactName:(e)=>this.setState(st=>({contactForm:{...st.contactForm,name:e.target.value}})),
+      setContactEmail:(e)=>this.setState(st=>({contactForm:{...st.contactForm,email:e.target.value}})),
+      setContactPhone:(e)=>this.setState(st=>({contactForm:{...st.contactForm,phone:e.target.value}})),
+      setContactMessage:(e)=>this.setState(st=>({contactForm:{...st.contactForm,message:e.target.value}})),
+      submitContactForm:(e)=>{ e.preventDefault(); this.setState({contactSent:true}); },
+      contactSubmitLabel: s.contactSent? 'Message Sent \u2713' : 'Send Message', faqs,
+
+      adminTabs, adminTabIsOverview:s.adminTab==='overview', adminTabIsCalendar:s.adminTab==='calendar', adminTabIsApartments:s.adminTab==='apartments',
+      adminTabIsRates:s.adminTab==='rates', adminTabIsGuests:s.adminTab==='guests', adminTabIsPayments:s.adminTab==='payments', adminTabIsReports:s.adminTab==='reports',
+      adminStats, adminArrivals, adminGuests, adminPayments, reportList, calendarDayHeaders, calendarLegend, adminTimeline
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #1f3a4d;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #b8934f;
+}
+
+input[type='date'] {
+  font-family: 'Inter', sans-serif;
+}
+
+::selection {
+  background: #b8934f;
+  color: #fff;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* The mockup drives its responsive switches off these data attributes.
+   Elements opt in by rendering with display:none and letting the matching
+   breakpoint reveal them. */
+@media (min-width: 900px) {
+  [data-desktop-nav] {
+    display: flex !important;
+  }
+  [data-desktop-only] {
+    display: flex !important;
+  }
+  [data-mobile-only] {
+    display: none !important;
+  }
+}
+
+@media (max-width: 899px) {
+  [data-mobile-only] {
+    display: flex !important;
+  }
+}
