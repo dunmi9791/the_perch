@@ -20,6 +20,8 @@ export interface Apartment {
   size: string;
   unitCount: number;
   photo?: string;
+  bedroomPhoto?: string;
+  bathroomPhoto?: string;
   shortDesc: string;
   longDesc: string;
   amenities: string[];

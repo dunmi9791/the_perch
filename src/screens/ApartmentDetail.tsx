@@ -59,10 +59,10 @@ export function ApartmentDetail({
           <ImageSlot src={apt.photo} placeholder={`${apt.name} photo`} />
         </div>
         <div style={{ minHeight: 206 }}>
-          <ImageSlot placeholder="Bedroom" />
+          <ImageSlot src={apt.bedroomPhoto} placeholder="Bedroom" />
         </div>
         <div style={{ minHeight: 206 }}>
-          <ImageSlot placeholder="Bathroom" />
+          <ImageSlot src={apt.bathroomPhoto} placeholder="Bathroom" />
         </div>
       </div>
 

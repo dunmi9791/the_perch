@@ -15,11 +15,11 @@ interface Props {
 }
 
 const GALLERY_PREVIEW = [
-  { id: 'gal-prev-1', caption: 'Living area', span: true },
-  { id: 'gal-prev-2', caption: 'Bedroom', span: false },
-  { id: 'gal-prev-3', caption: 'Kitchen', span: false },
-  { id: 'gal-prev-4', caption: 'Bathroom', span: false },
-  { id: 'gal-prev-5', caption: 'Exterior', span: false },
+  { id: 'gal-prev-1', caption: 'Living area', span: true, src: '/assets/glimpse-living.jpg' },
+  { id: 'gal-prev-2', caption: 'Bedroom', span: false, src: '/assets/glimpse-bedroom.jpg' },
+  { id: 'gal-prev-3', caption: 'Kitchen', span: false, src: '/assets/glimpse-kitchen.jpg' },
+  { id: 'gal-prev-4', caption: 'Bathroom', span: false, src: '/assets/glimpse-bathroom.jpg' },
+  { id: 'gal-prev-5', caption: 'Dinning', span: false, src: '/assets/glimpse-dinning.jpg' },
 ];
 
 export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Props) {
@@ -44,7 +44,7 @@ export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Prop
         }}
       >
         <div style={{ position: 'absolute', inset: 0, opacity: 0.55 }}>
-          <ImageSlot placeholder="Drop hero photo of The Perch exterior or living room" />
+          <ImageSlot src="/assets/hero-living.jpg" placeholder="Drop hero photo of The Perch exterior or living room" />
         </div>
         <div
           style={{
@@ -316,7 +316,7 @@ export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Prop
                 key={g.id}
                 style={g.span ? { gridColumn: 'span 2', gridRow: 'span 2' } : undefined}
               >
-                <ImageSlot placeholder={g.caption} />
+                <ImageSlot src={g.src} placeholder={g.caption} />
               </div>
             ))}
           </div>
@@ -426,7 +426,7 @@ export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Prop
             boxShadow: '0 6px 24px rgba(31,58,77,0.1)',
           }}
         >
-          <ImageSlot placeholder="Map: River Park Estate, Lugbe, Abuja" />
+          <ImageSlot src="/assets/location-map.png" placeholder="Map: River Park Estate, Lugbe, Abuja" />
         </div>
       </section>
 
