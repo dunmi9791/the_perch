@@ -63,7 +63,7 @@ export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Prop
           }}
         >
           <p style={{ ...eyebrow, fontSize: 13, margin: '0 0 16px', animation: 'fadeUp 0.6s ease' }}>
-            Slice of Paradise · Lugbe, Abuja
+            Slice of Paradise · Airport, Abuja
           </p>
           <h1
             style={{

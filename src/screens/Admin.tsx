@@ -304,7 +304,7 @@ export function Admin({ onExit, onEditApartment }: Props) {
           <>
             <h1 style={h1}>Rates &amp; Pricing</h1>
             <p style={{ fontSize: 13, color: c.gold, margin: '0 0 24px', fontWeight: 600 }}>
-              Demo pricing shown — replace with official rate card before launch.
+              Rates shown are the current official rate card.
             </p>
             <div style={tableWrap}>
               <div style={headRow('1.4fr 1fr 1fr 1fr 1fr')}>

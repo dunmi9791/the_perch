@@ -30,7 +30,7 @@ export const CONTACT = {
   phone: '0707 331 8012',
   phoneHref: 'tel:07073318012',
   whatsapp: 'https://wa.me/2347073318012',
-  email: 'reservations@theperch.example',
+  email: 'theperchabuja@gmail.com',
   address: 'Plot 372 Vincent Azike Street, Cluster 1, River Park Estate, Lugbe, Abuja',
   mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=8.975972,7.346278',
 } as const;

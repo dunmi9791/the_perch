@@ -16,18 +16,27 @@ const UPSTAIRS_AMENITIES = [
   'Smart TV',
   '24/7 Power Backup',
   'Housekeeping',
-  'Private Balcony',
   'Secure Parking',
   'Hot Water',
 ];
 
-const LARGEST_AMENITIES = [
+const BALCONY_AMENITIES = [
   'Wi-Fi',
   'Air Conditioning',
   'Smart TV',
   '24/7 Power Backup',
   'Housekeeping',
   'Private Balcony',
+  'Secure Parking',
+  'Hot Water',
+];
+
+const PREMIUM_AMENITIES = [
+  'Wi-Fi',
+  'Air Conditioning',
+  'Smart TV',
+  '24/7 Power Backup',
+  'Housekeeping',
   'Secure Parking',
   'Premium Furnishing',
   'Hot Water',
@@ -37,11 +46,19 @@ const DOWNSTAIRS_SHORT = 'A cozy downstairs room for solo travellers and couples
 const DOWNSTAIRS_LONG =
   'A cozy, self-contained downstairs room designed for solo travellers and couples who want comfort without excess. A calm, quiet base for business or leisure in Lugbe.';
 
-const LARGEST_SHORT = 'The biggest upstairs room, with extra space and premium furnishing.';
-const LARGEST_LONG =
-  'One of our two largest rooms, upstairs with extra space and premium furnishing. Well suited to guests who want the most comfortable stay on offer.';
+const HORNBILL_SHORT = 'A cozy room upstairs suitable for solo travellers and couples.';
+const HORNBILL_LONG =
+  'A cozy room upstairs suitable for solo travellers and couples. A calm, private base for business or leisure, close to the airport.';
 
-/** Rates are the demo card carried over from the design — replace before launch. */
+const KINGFISHER_SHORT = 'The bigger room upstairs with a private balcony overlooking the estate.';
+const KINGFISHER_LONG =
+  'The bigger room upstairs with a private balcony overlooking the estate. Ideal for guests who want more space and a quiet spot to sit outside.';
+
+const TURACO_SHORT = 'The bigger room upstairs with extra space and premium furnishing.';
+const TURACO_LONG =
+  'The bigger room upstairs with extra space and premium furnishing. Well suited to guests who want the most comfortable stay on offer.';
+
+/** Nightly rates from the official rate card (Sept 2026). Weekend rate is the same as weekday. */
 export const APARTMENTS: Apartment[] = [
   {
     id: 1,
@@ -59,10 +76,10 @@ export const APARTMENTS: Apartment[] = [
     shortDesc: DOWNSTAIRS_SHORT,
     longDesc: DOWNSTAIRS_LONG,
     amenities: DOWNSTAIRS_AMENITIES,
-    nightly: 55000,
-    weekend: 60000,
-    weekly: 340000,
-    monthly: 1150000,
+    nightly: 70000,
+    weekend: 70000,
+    weekly: 490000,
+    monthly: 2100000,
     cleaning: 8000,
     deposit: 20000,
     minStay: 1,
@@ -85,10 +102,10 @@ export const APARTMENTS: Apartment[] = [
     shortDesc: DOWNSTAIRS_SHORT,
     longDesc: DOWNSTAIRS_LONG,
     amenities: DOWNSTAIRS_AMENITIES,
-    nightly: 55000,
-    weekend: 60000,
-    weekly: 340000,
-    monthly: 1150000,
+    nightly: 70000,
+    weekend: 70000,
+    weekly: 490000,
+    monthly: 2100000,
     cleaning: 8000,
     deposit: 20000,
     minStay: 1,
@@ -111,10 +128,10 @@ export const APARTMENTS: Apartment[] = [
     shortDesc: DOWNSTAIRS_SHORT,
     longDesc: DOWNSTAIRS_LONG,
     amenities: DOWNSTAIRS_AMENITIES,
-    nightly: 55000,
-    weekend: 60000,
-    weekly: 340000,
-    monthly: 1150000,
+    nightly: 70000,
+    weekend: 70000,
+    weekly: 490000,
+    monthly: 2100000,
     cleaning: 8000,
     deposit: 20000,
     minStay: 1,
@@ -134,14 +151,13 @@ export const APARTMENTS: Apartment[] = [
     photo: '/assets/hornbill-main.jpg',
     bedroomPhoto: '/assets/hornbill-bedroom.jpg',
     bathroomPhoto: '/assets/hornbill-bathroom.jpg',
-    shortDesc: 'An upstairs room with a private balcony overlooking the estate.',
-    longDesc:
-      'An upstairs room with a private balcony overlooking the estate. Ideal for couples or solo guests staying longer.',
+    shortDesc: HORNBILL_SHORT,
+    longDesc: HORNBILL_LONG,
     amenities: UPSTAIRS_AMENITIES,
-    nightly: 75000,
-    weekend: 82000,
-    weekly: 460000,
-    monthly: 1600000,
+    nightly: 70000,
+    weekend: 70000,
+    weekly: 490000,
+    monthly: 2100000,
     cleaning: 10000,
     deposit: 30000,
     minStay: 1,
@@ -151,23 +167,23 @@ export const APARTMENTS: Apartment[] = [
   {
     id: 5,
     name: 'Kingfisher',
-    type: 'Upstairs Room — Largest',
+    type: 'Upstairs Room — Larger',
     maxGuests: 3,
     bedrooms: 1,
     bathrooms: '1 Bathroom',
     beds: '1 King Bed',
-    size: 'Largest Room',
+    size: 'Larger Room',
     unitCount: 1,
     photo: '/assets/kingfisher-main.jpg',
     bedroomPhoto: '/assets/kingfisher-bedroom.jpg',
     bathroomPhoto: '/assets/kingfisher-bathroom.jpg',
-    shortDesc: LARGEST_SHORT,
-    longDesc: LARGEST_LONG,
-    amenities: LARGEST_AMENITIES,
+    shortDesc: KINGFISHER_SHORT,
+    longDesc: KINGFISHER_LONG,
+    amenities: BALCONY_AMENITIES,
     nightly: 90000,
-    weekend: 98000,
-    weekly: 560000,
-    monthly: 1950000,
+    weekend: 90000,
+    weekly: 630000,
+    monthly: 2700000,
     cleaning: 12000,
     deposit: 35000,
     minStay: 1,
@@ -177,23 +193,23 @@ export const APARTMENTS: Apartment[] = [
   {
     id: 6,
     name: 'Turaco',
-    type: 'Upstairs Room — Largest',
+    type: 'Upstairs Room — Larger',
     maxGuests: 3,
     bedrooms: 1,
     bathrooms: '1 Bathroom',
     beds: '1 King Bed',
-    size: 'Largest Room',
+    size: 'Larger Room',
     unitCount: 1,
     photo: '/assets/turaco-main.jpg',
     bedroomPhoto: '/assets/turaco-bedroom.jpg',
     bathroomPhoto: '/assets/turaco-bathroom.jpg',
-    shortDesc: LARGEST_SHORT,
-    longDesc: LARGEST_LONG,
-    amenities: LARGEST_AMENITIES,
+    shortDesc: TURACO_SHORT,
+    longDesc: TURACO_LONG,
+    amenities: PREMIUM_AMENITIES,
     nightly: 90000,
-    weekend: 98000,
-    weekly: 560000,
-    monthly: 1950000,
+    weekend: 90000,
+    weekly: 630000,
+    monthly: 2700000,
     cleaning: 12000,
     deposit: 35000,
     minStay: 1,
