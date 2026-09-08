@@ -558,7 +558,6 @@ function ApartmentCard({
             </span>
             <span style={{ fontSize: 12, color: c.faint }}> / night</span>
           </div>
-          <span style={{ fontSize: 10, color: c.gold, fontWeight: 600 }}>SAMPLE RATE</span>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
           <button

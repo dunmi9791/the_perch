@@ -18,6 +18,16 @@ import { Gallery } from './screens/Gallery';
 import { About } from './screens/About';
 import { Contact } from './screens/Contact';
 import { Admin } from './screens/Admin';
+import { findApartment } from './data/apartments';
+import { priceBreakdown } from './lib/pricing';
+import { addBooking, getStore, newBookingRef } from './lib/store';
+import { isAvailable } from './lib/occupancy';
+import { fitsCapacity, guestError, stayError } from './lib/validation';
+
+/** Identity of a booking as submitted; a change to any of these is a new booking, not a retry. */
+function bookingKey(b: BookingState): string {
+  return [b.apartmentId, b.checkIn, b.checkOut, b.adults, b.children, b.guest.email.trim().toLowerCase()].join('|');
+}
 
 const EMPTY_GUEST: GuestDetails = {
   name: '',
@@ -72,6 +82,7 @@ export function App() {
   const [detailId, setDetailId] = useState(1);
   const [booking, setBooking] = useState<BookingState>(INITIAL_BOOKING);
   const [bookingRef, setBookingRef] = useState<string | null>(null);
+  const [confirmedKey, setConfirmedKey] = useState<string | null>(null);
 
   // The hash keeps the address bar meaningful and makes back/forward work
   // without pulling in a router for what is a single-page mockup.
@@ -101,7 +112,7 @@ export function App() {
   const patchGuest = (patch: Partial<GuestDetails>) =>
     setBooking((b) => ({ ...b, guest: { ...b.guest, ...patch } }));
 
-  /** Availability -> booking: carry the dates and jump straight to guest details. */
+  /** Availability -> booking: carry the dates and skip to the room step only if they are valid. */
   const selectFromAvailability = (id: number) => {
     setBooking((b) => ({
       ...b,
@@ -110,23 +121,75 @@ export function App() {
       adults: avail.adults,
       children: avail.children,
       apartmentId: id,
-      step: 2,
+      step: stayError(avail.checkIn, avail.checkOut) ? 1 : 2,
     }));
     navigate('booking');
   };
 
-  /** Detail -> booking: skip the dates step when the guest already picked a range. */
+  /** Detail -> booking: skip the dates step only when the picked range is actually bookable. */
   const reserveFromDetail = () => {
     setBooking((b) => ({
       ...b,
       apartmentId: detailId,
-      step: b.checkIn && b.checkOut ? 2 : 1,
+      step: stayError(b.checkIn, b.checkOut) ? 1 : 2,
     }));
     navigate('booking');
   };
 
+  /**
+   * Final gate before a booking is recorded. Every earlier step re-validates here
+   * so a stale or hand-edited state cannot slip through to confirmation.
+   */
   const confirmBooking = () => {
-    setBookingRef((ref) => ref ?? `PRC-${Math.floor(10000 + Math.random() * 89999)}`);
+    const apt = findApartment(booking.apartmentId);
+    const { bookings, blocks } = getStore();
+    if (stayError(booking.checkIn, booking.checkOut)) {
+      patchBooking({ step: 1 });
+      return;
+    }
+    if (
+      !apt ||
+      !fitsCapacity(apt, booking.adults, booking.children) ||
+      !isAvailable(apt.id, booking.checkIn, booking.checkOut, bookings, blocks)
+    ) {
+      patchBooking({ step: 2 });
+      return;
+    }
+    if (guestError(booking.guest)) {
+      patchBooking({ step: 3 });
+      return;
+    }
+
+    // Re-confirming the same booking (e.g. after going back to re-read the bank
+    // details) keeps its reference; anything else is a new reservation.
+    const key = bookingKey(booking);
+    if (bookingRef && confirmedKey === key) {
+      patchBooking({ step: 5 });
+      return;
+    }
+    const ref = newBookingRef();
+    const bd = priceBreakdown(apt, booking.checkIn, booking.checkOut);
+    {
+      addBooking({
+        ref,
+        apartmentId: apt.id,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        adults: Number(booking.adults) || 1,
+        children: Number(booking.children) || 0,
+        guestName: booking.guest.name.trim(),
+        guestEmail: booking.guest.email.trim(),
+        guestPhone: booking.guest.phone.trim(),
+        payment: booking.payment,
+        total: bd.valid ? bd.total : 0,
+        status: 'pending',
+        source: 'website',
+        note: [booking.guest.purpose, booking.guest.requests].filter(Boolean).join(' · '),
+        createdAt: new Date().toISOString(),
+      });
+    }
+    setBookingRef(ref);
+    setConfirmedKey(key);
     patchBooking({ step: 5 });
   };
 

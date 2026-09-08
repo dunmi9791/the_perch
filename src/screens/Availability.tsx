@@ -2,6 +2,8 @@ import type { AvailabilityState } from '../types';
 import { APARTMENTS } from '../data/apartments';
 import { bedroomsLabel, fmt } from '../lib/format';
 import { priceBreakdown } from '../lib/pricing';
+import { isAvailable } from '../lib/occupancy';
+import { useStore } from '../lib/store';
 import { amenityChip, c, eyebrow, field, label, pageTitle, serif } from '../theme';
 import { ImageSlot } from '../components/ImageSlot';
 
@@ -17,8 +19,13 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
   const error = rangeReversed ? 'Check-out date must be after check-in date.' : null;
   const validRange = Boolean(avail.checkIn && avail.checkOut) && !error;
 
+  const { bookings, blocks } = useStore();
   const totalGuests = Number(avail.adults || 1) + Number(avail.children || 0);
-  const matches = APARTMENTS.filter((a) => a.maxGuests >= totalGuests);
+  const matches = APARTMENTS.filter(
+    (a) =>
+      a.maxGuests >= totalGuests &&
+      (!validRange || isAvailable(a.id, avail.checkIn, avail.checkOut, bookings, blocks)),
+  );
 
   const resultsLabel = error
     ? ''

@@ -3,6 +3,8 @@ import { APARTMENTS, findApartment } from '../data/apartments';
 import { bedroomsLabel, fmt, nightsLabel } from '../lib/format';
 import { priceBreakdown } from '../lib/pricing';
 import { monthCells, monthLabel, WEEKDAYS } from '../lib/calendar';
+import { dayStatus, isAvailable } from '../lib/occupancy';
+import { useStore } from '../lib/store';
 import { c, CONTACT, field, label, serif } from '../theme';
 import { ImageSlot } from '../components/ImageSlot';
 import { CheckIcon } from '../components/Icons';
@@ -18,7 +20,7 @@ interface Props {
 
 const LEGEND = [
   { label: 'Available', color: c.sageBg },
-  { label: 'Reserved', color: c.gold },
+  { label: 'Reserved (awaiting confirmation)', color: c.gold },
   { label: 'Confirmed', color: c.navy },
   { label: 'Blocked / Maintenance', color: '#D8D3C6' },
 ];
@@ -34,7 +36,9 @@ export function ApartmentDetail({
   const apt = findApartment(apartmentId) ?? APARTMENTS[0];
   const breakdown = priceBreakdown(apt, booking.checkIn, booking.checkOut);
   const related = APARTMENTS.filter((a) => a.id !== apt.id).slice(0, 3);
-  const cells = monthCells();
+  const { bookings, blocks } = useStore();
+  const cells = monthCells((iso) => dayStatus(apt.id, iso, bookings, blocks));
+  const datesFree = isAvailable(apt.id, booking.checkIn, booking.checkOut, bookings, blocks);
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px 90px' }}>
@@ -260,7 +264,6 @@ export function ApartmentDetail({
                 </span>
                 <span style={{ fontSize: 13, color: c.faint }}> / night</span>
               </div>
-              <span style={{ fontSize: 10, color: c.gold, fontWeight: 600 }}>SAMPLE RATE</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
@@ -353,18 +356,25 @@ export function ApartmentDetail({
               </p>
             )}
 
+            {!datesFree && (
+              <p style={{ fontSize: 12.5, color: c.danger, margin: '0 0 14px' }}>
+                {apt.name} is not available for these dates. Try another room or date range.
+              </p>
+            )}
+
             <button
               onClick={onReserve}
+              disabled={!datesFree}
               style={{
                 width: '100%',
-                background: c.navy,
+                background: datesFree ? c.navy : c.disabled,
                 color: c.white,
                 border: 'none',
                 padding: 13,
                 borderRadius: 4,
                 fontSize: 14,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: datesFree ? 'pointer' : 'not-allowed',
                 marginBottom: 10,
               }}
             >

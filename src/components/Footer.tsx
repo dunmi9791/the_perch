@@ -54,7 +54,11 @@ export function Footer({ onNavigate }: { onNavigate: (screen: Screen) => void })
             {NAV_LINKS.map((link) => (
               <a
                 key={link.screen}
-                onClick={() => onNavigate(link.screen)}
+                href={`#/${link.screen}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onNavigate(link.screen);
+                }}
                 style={{ fontSize: 13.5, color: c.onNavy, cursor: 'pointer' }}
               >
                 {link.label}
@@ -117,7 +121,14 @@ export function Footer({ onNavigate }: { onNavigate: (screen: Screen) => void })
         <p style={{ fontSize: 12, color: c.onNavyFaint, margin: 0 }}>
           © {new Date().getFullYear()} The Perch. All rights reserved.
         </p>
-        <a onClick={() => onNavigate('admin')} style={{ fontSize: 11, color: '#5C7488', cursor: 'pointer' }}>
+        <a
+          href="#/admin"
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('admin');
+          }}
+          style={{ fontSize: 11, color: '#5C7488', cursor: 'pointer' }}
+        >
           Admin Login
         </a>
       </div>

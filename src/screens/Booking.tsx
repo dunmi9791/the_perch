@@ -3,8 +3,11 @@ import type { ReactNode } from 'react';
 import type { BookingState, GuestDetails, PaymentMethod } from '../types';
 import { APARTMENTS, findApartment } from '../data/apartments';
 import { BANK_DETAILS, PAYMENT_OPTIONS } from '../data/content';
-import { bedroomsLabel, daysBetween, fmt } from '../lib/format';
+import { bedroomsLabel, daysBetween, fmt, nightsLabel } from '../lib/format';
 import { priceBreakdown } from '../lib/pricing';
+import { isAvailable } from '../lib/occupancy';
+import { fitsCapacity, guestError, stayError, totalGuests } from '../lib/validation';
+import { useStore } from '../lib/store';
 import { btnGhost, btnPrimary, c, CONTACT, field, label, serif } from '../theme';
 import { ImageSlot } from '../components/ImageSlot';
 import { BookingSummary } from '../components/BookingSummary';
@@ -45,16 +48,24 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
   const selectedApt = findApartment(booking.apartmentId);
   const breakdown = priceBreakdown(selectedApt, booking.checkIn, booking.checkOut);
 
-  // A check-in earlier than today is rejected before the dates step will advance.
-  const startOfToday = new Date(new Date().toDateString());
-  let dateError: string | null = null;
-  if (booking.checkIn && new Date(booking.checkIn) < startOfToday) {
-    dateError = 'Check-in date cannot be in the past.';
-  } else if (booking.checkIn && booking.checkOut && nights <= 0) {
-    dateError = 'Check-out date must be after check-in date.';
-  }
+  // The shared validator is the same one App.tsx runs before recording the booking.
+  const stayProblem = stayError(booking.checkIn, booking.checkOut);
+  // Only surface the "pick both dates" hint once the guest has started choosing.
+  const dateError = booking.checkIn || booking.checkOut ? stayProblem : null;
 
-  const guestComplete = Boolean(booking.guest.name && booking.guest.email && booking.guest.phone);
+  const guestProblem = guestError(booking.guest);
+  const guestComplete = guestProblem === null;
+  const guestStarted = Boolean(booking.guest.name || booking.guest.email || booking.guest.phone);
+
+  const { bookings, blocks } = useStore();
+  const partySize = totalGuests(booking.adults, booking.children);
+  const aptFree = (id: number) => isAvailable(id, booking.checkIn, booking.checkOut, bookings, blocks);
+  /** A room can be chosen only if it is free for the dates and big enough for the party. */
+  const aptSelectable = (id: number) => {
+    const apt = findApartment(id);
+    return Boolean(apt) && aptFree(id) && fitsCapacity(apt!, booking.adults, booking.children);
+  };
+  const selectionValid = booking.apartmentId !== null && aptSelectable(booking.apartmentId);
   const isTransfer = booking.payment === 'transfer';
 
   // Each step is a fresh page of the flow; land at the top of it.
@@ -189,9 +200,10 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
           {dateError && <p style={{ color: c.danger, fontSize: 13, margin: '0 0 20px' }}>{dateError}</p>}
           <button
             onClick={() => {
-              if (!dateError && booking.checkIn && booking.checkOut) goTo(2);
+              if (!stayProblem) goTo(2);
             }}
-            style={btnPrimary}
+            disabled={Boolean(stayProblem)}
+            style={{ ...btnPrimary, background: stayProblem ? c.disabled : c.navy }}
           >
             Continue
           </button>
@@ -202,23 +214,49 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
       {booking.step === 2 && (
         <div>
           <h2 style={stepHeading}>Select Your Apartment</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+          <p style={{ fontSize: 13, color: c.faint, margin: '-12px 0 20px' }}>
+            {partySize} guest{partySize === 1 ? '' : 's'} · {nightsLabel(nights)}. Rooms that are
+            full or too small for your party are greyed out.
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Apartment"
+            style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}
+          >
             {APARTMENTS.map((apt) => {
               const bd = priceBreakdown(apt, booking.checkIn, booking.checkOut);
               const stayTotal = bd.valid ? bd.stayOnlyTotal : apt.nightly * Math.max(nights, 1);
+              const free = aptFree(apt.id);
+              const fits = fitsCapacity(apt, booking.adults, booking.children);
+              const selectable = free && fits;
+              const selected = booking.apartmentId === apt.id;
+              const blocker = !free
+                ? 'Not available for these dates'
+                : !fits
+                  ? `Sleeps up to ${apt.maxGuests} — too small for ${partySize} guests`
+                  : null;
               return (
-                <div
+                <button
                   key={apt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={!selectable}
                   onClick={() => onBookingChange({ apartmentId: apt.id })}
                   style={{
                     display: 'flex',
                     flexWrap: 'wrap',
                     gap: 16,
+                    width: '100%',
+                    textAlign: 'left',
+                    font: 'inherit',
+                    color: 'inherit',
                     background: c.white,
-                    border: `2px solid ${booking.apartmentId === apt.id ? c.gold : c.hairline}`,
+                    border: `2px solid ${selected ? c.gold : c.hairline}`,
                     borderRadius: 10,
                     padding: 16,
-                    cursor: 'pointer',
+                    cursor: selectable ? 'pointer' : 'not-allowed',
+                    opacity: selectable ? 1 : 0.5,
                     alignItems: 'center',
                   }}
                 >
@@ -234,6 +272,11 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
                     <p style={{ fontSize: 12.5, color: c.faint, margin: 0 }}>
                       {apt.maxGuests} Guests · {bedroomsLabel(apt.bedrooms)} · {nights} nights
                     </p>
+                    {blocker && (
+                      <p style={{ fontSize: 12, color: c.danger, fontWeight: 600, margin: '4px 0 0' }}>
+                        {blocker}
+                      </p>
+                    )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p
@@ -249,7 +292,7 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
                     </p>
                     <p style={{ fontSize: 11, color: c.faint, margin: 0 }}>total, before fees</p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -259,8 +302,8 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
             </button>
             <button
               onClick={() => goTo(3)}
-              disabled={!selectedApt}
-              style={{ ...btnPrimary, background: selectedApt ? c.navy : c.disabled }}
+              disabled={!selectionValid}
+              style={{ ...btnPrimary, background: selectionValid ? c.navy : c.disabled }}
             >
               Continue
             </button>
@@ -352,6 +395,9 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
                 style={{ ...field, fontFamily: 'inherit', resize: 'vertical' }}
               />
             </div>
+            {guestStarted && guestProblem && (
+              <p style={{ color: c.danger, fontSize: 13, margin: '16px 0 0' }}>{guestProblem}</p>
+            )}
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
               <button onClick={() => goTo(2)} style={btnGhost}>
                 Back

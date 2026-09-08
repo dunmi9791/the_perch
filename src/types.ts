@@ -103,3 +103,37 @@ export interface GalleryImage {
   rowSpan: number;
   photo?: string;
 }
+
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
+export type BookingSource = 'website' | 'offline';
+
+/** A reservation as stored by the admin store — website submissions and offline entries alike. */
+export interface BookingRecord {
+  ref: string;
+  apartmentId: number;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  payment: PaymentMethod | 'cash' | 'other';
+  /** Stay total including fees and deposit, in naira. */
+  total: number;
+  status: BookingStatus;
+  source: BookingSource;
+  note: string;
+  createdAt: string;
+}
+
+/** A date range an admin has taken off sale for one apartment (maintenance, owner use, etc). */
+export interface DateBlock {
+  id: string;
+  apartmentId: number;
+  /** Inclusive yyyy-mm-dd. */
+  start: string;
+  /** Exclusive yyyy-mm-dd, like a check-out date. */
+  end: string;
+  reason: string;
+}

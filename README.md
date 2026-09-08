@@ -23,8 +23,8 @@ src/
   App.tsx          screen state, hash routing, and the flows that cross screens
   theme.ts         palette, shared control/button styles, business contact details
   types.ts
-  data/            apartments, marketing copy, gallery, admin demo data
-  lib/             currency + date formatting, stay pricing, calendar grids
+  data/            apartments, marketing copy, gallery, admin tabs + status styles
+  lib/             formatting, stay pricing, calendar grids, occupancy checks, booking store
   components/      header, footer, image slot, icons, booking summary
   screens/         one file per screen
 ```
@@ -57,18 +57,39 @@ with Friday and Saturday nights billed at the weekend rate, plus a cleaning fee
 and a refundable deposit. Stays shorter than an apartment's minimum are rejected
 rather than priced.
 
-Rates in `src/data/apartments.ts` are the demo card from the mockup, which is why
-"SAMPLE RATE" appears next to prices. **Replace them with the real rate card
-before launch**, and drop the sample-rate labels with them.
+Rates in `src/data/apartments.ts` are the official rate card: ₦70,000 a night for
+Robin, Weaver, Sunbird and Hornbill, ₦90,000 for Kingfisher and Turaco. Weekend
+and weekday rates are the same.
+
+## Bookings and the admin area
+
+`src/lib/store.ts` keeps bookings and blocked dates in `localStorage` (key
+`perch.store.v1`) and exposes them through `useStore()`. It is deliberately the
+only place that reads or writes persistence, so moving to a real backend means
+replacing its `load`/`commit` pair and nothing else.
+
+- Website bookings are saved as **pending** when the guest submits step 4.
+- `src/lib/occupancy.ts` decides availability: pending and confirmed bookings
+  and admin blocks all hold their nights; cancelled bookings release them. The
+  availability search, the booking flow's room picker, and the detail page's
+  Reserve button all consult it.
+- `#/admin` (footer link) is behind a passcode in `src/data/admin.ts`. It has a
+  dashboard (totals, revenue, occupancy, arrivals), a bookings list with
+  confirm/cancel, a form for offline bookings taken by phone or WhatsApp, a
+  21-day timeline, and a block-dates form for maintenance or owner use.
+
+The passcode is a convenience lock for a static site, not security: anyone with
+the source can read it, and the data lives in the browser that entered it. Move
+both to a server before storing real guest details.
 
 ## What is still mocked
 
 Nothing here talks to a backend yet:
 
-- **Availability** is not real — every apartment that fits the guest count is
-  offered for any date range. The detail-page calendar and the admin timeline
-  are coloured from fixed seeds.
+- **Persistence is per-browser.** Bookings made on a guest's phone are only
+  visible in that phone's `localStorage`; the admin sees them only when made on
+  the same device. A backend is needed before real guests book online.
 - **Payment** selects a method and generates a reference; no processor is wired
   up, and there is no upload for bank-transfer evidence.
 - **The contact form** and booking confirmation email are not sent anywhere.
-- **Admin** is a static demo dashboard with no auth behind the footer link.
+- **Admin auth** is a client-side passcode, see above.

@@ -42,21 +42,27 @@ export function Header({ screen, menuOpen, onNavigate, onToggleMenu }: Props) {
           gap: 16,
         }}
       >
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => onNavigate('home')}
-          onKeyDown={(e) => e.key === 'Enter' && onNavigate('home')}
+        <a
+          href="#/home"
+          aria-label="The Perch home"
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('home');
+          }}
           style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
         >
           <Logo height={46} />
-        </div>
+        </a>
 
         <nav style={{ display: 'none', alignItems: 'center', gap: 28 }} data-desktop-nav="1">
           {NAV_ITEMS.map((item) => (
             <a
               key={item.screen}
-              onClick={() => onNavigate(item.screen)}
+              href={`#/${item.screen}`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate(item.screen);
+              }}
               style={{
                 fontSize: 14,
                 fontWeight: 500,
@@ -153,7 +159,11 @@ export function Header({ screen, menuOpen, onNavigate, onToggleMenu }: Props) {
           {NAV_ITEMS.map((item) => (
             <a
               key={item.screen}
-              onClick={() => onNavigate(item.screen)}
+              href={`#/${item.screen}`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate(item.screen);
+              }}
               style={{ fontSize: 15, fontWeight: 500, cursor: 'pointer' }}
             >
               {item.label}

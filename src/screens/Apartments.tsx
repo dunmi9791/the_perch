@@ -228,7 +228,6 @@ export function Apartments({
                     </span>
                     <span style={{ fontSize: 12, color: c.faint }}> / night</span>
                   </div>
-                  <span style={{ fontSize: 10, color: c.gold, fontWeight: 600 }}>SAMPLE RATE</span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16, fontSize: 13, color: c.bodyMuted }}>
