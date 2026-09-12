@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import {
-  ADMIN_PASSCODE,
   ADMIN_TABS,
   CALENDAR_LEGEND,
   PAYMENT_LABEL,
+  PAYMENT_STATUS_STYLE,
   STATUS_STYLE,
 } from '../data/admin';
 import type { AdminTab } from '../data/admin';
@@ -23,10 +23,12 @@ import { priceBreakdown } from '../lib/pricing';
 import {
   addBlock,
   addBooking,
-  newBookingRef,
   removeBlock,
   removeBooking,
+  signIn,
+  signOut,
   updateBooking,
+  useAuth,
   useStore,
 } from '../lib/store';
 import { btnGhost, btnPrimary, c, field, label, serif } from '../theme';
@@ -38,7 +40,6 @@ interface Props {
 }
 
 const TIMELINE_DAYS = 21;
-const SESSION_KEY = 'perch.admin.unlocked';
 
 /* ---------- shared styles ---------- */
 
@@ -139,6 +140,26 @@ function monthBounds(now = new Date()): { start: string; end: string } {
   };
 }
 
+function PaymentPill({ status }: { status: BookingRecord['paymentStatus'] }) {
+  const st = PAYMENT_STATUS_STYLE[status];
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        background: st.bg,
+        color: st.color,
+        fontSize: 11,
+        fontWeight: 600,
+        padding: '2px 8px',
+        borderRadius: 999,
+        marginTop: 2,
+      }}
+    >
+      {st.label}
+    </span>
+  );
+}
+
 function StatusPill({ status }: { status: BookingStatus }) {
   const s = STATUS_STYLE[status];
   return <span style={pill(s.bg, s.color)}>{s.label}</span>;
@@ -166,31 +187,24 @@ function StatCard({ label: text, value, hint }: { label: string; value: string; 
   );
 }
 
-/* ---------- passcode gate ---------- */
+/* ---------- sign in ---------- */
 
-function readUnlocked(): boolean {
-  try {
-    return window.sessionStorage.getItem(SESSION_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
+function Gate({ onExit }: { onExit: () => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-function Gate({ onUnlock, onExit }: { onUnlock: () => void; onExit: () => void }) {
-  const [code, setCode] = useState('');
-  const [wrong, setWrong] = useState(false);
-
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (code === ADMIN_PASSCODE) {
-      try {
-        window.sessionStorage.setItem(SESSION_KEY, '1');
-      } catch {
-        // ignore
-      }
-      onUnlock();
-    } else {
-      setWrong(true);
+    setBusy(true);
+    setError(null);
+    try {
+      await signIn(email.trim(), password);
+      // The store picks up the session and the screen re-renders as an admin.
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not sign in.');
+      setBusy(false);
     }
   };
 
@@ -205,27 +219,36 @@ function Gate({ onUnlock, onExit }: { onUnlock: () => void; onExit: () => void }
         padding: 24,
       }}
     >
-      <form onSubmit={submit} style={{ ...panel, padding: 32, width: '100%', maxWidth: 380 }}>
+      <form onSubmit={(e) => void submit(e)} style={{ ...panel, padding: 32, width: '100%', maxWidth: 380 }}>
         <p style={{ ...h1, fontSize: 22 }}>Perch Admin</p>
-        <p style={subtitle}>Enter the staff passcode to manage bookings.</p>
-        <label style={label} htmlFor="admin-code">
-          Passcode
+        <p style={subtitle}>Sign in with your staff account to manage bookings.</p>
+        <label style={label} htmlFor="admin-email">
+          Email
         </label>
         <input
-          id="admin-code"
-          type="password"
-          value={code}
+          id="admin-email"
+          type="email"
+          autoComplete="username"
+          value={email}
           autoFocus
-          onChange={(e) => {
-            setCode(e.target.value);
-            setWrong(false);
-          }}
+          onChange={(e) => setEmail(e.target.value)}
           style={{ ...field, marginBottom: 12 }}
         />
-        {wrong && <p style={{ color: c.danger, fontSize: 12.5, margin: '0 0 12px' }}>Incorrect passcode.</p>}
+        <label style={label} htmlFor="admin-password">
+          Password
+        </label>
+        <input
+          id="admin-password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ ...field, marginBottom: 12 }}
+        />
+        {error && <p style={{ color: c.danger, fontSize: 12.5, margin: '0 0 12px' }}>{error}</p>}
         <div style={{ display: 'flex', gap: 10 }}>
-          <button type="submit" style={{ ...btnPrimary, flex: 1 }}>
-            Unlock
+          <button type="submit" disabled={busy} style={{ ...btnPrimary, flex: 1, opacity: busy ? 0.7 : 1 }}>
+            {busy ? 'Signing in…' : 'Sign in'}
           </button>
           <button type="button" onClick={onExit} style={btnGhost}>
             Back
@@ -236,22 +259,55 @@ function Gate({ onUnlock, onExit }: { onUnlock: () => void; onExit: () => void }
   );
 }
 
+/** A signed-in account that is not on the staff list. */
+function NotStaff({ email, onExit }: { email: string; onExit: () => void }) {
+  return (
+    <div
+      style={{
+        minHeight: 'calc(100vh - 74px)',
+        background: c.cream,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div style={{ ...panel, padding: 32, width: '100%', maxWidth: 420 }}>
+        <p style={{ ...h1, fontSize: 22 }}>Not on the staff list</p>
+        <p style={{ ...subtitle, marginBottom: 20 }}>
+          {email} is signed in but has not been granted admin access. Ask the owner to add it.
+        </p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button type="button" onClick={() => void signOut()} style={{ ...btnPrimary, flex: 1 }}>
+            Sign out
+          </button>
+          <button type="button" onClick={onExit} style={btnGhost}>
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- screen ---------- */
 
 export function Admin({ onExit, onEditApartment }: Props) {
-  const [unlocked, setUnlocked] = useState(readUnlocked);
+  const { session, isAdmin, checked } = useAuth();
+  const { error: loadError } = useStore();
   const [tab, setTab] = useState<AdminTab>('overview');
 
-  if (!unlocked) return <Gate onUnlock={() => setUnlocked(true)} onExit={onExit} />;
+  if (!checked) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 74px)', background: c.cream, display: 'grid', placeItems: 'center' }}>
+        <p style={{ color: c.faint, fontSize: 13.5 }}>Checking your session…</p>
+      </div>
+    );
+  }
+  if (!session) return <Gate onExit={onExit} />;
+  if (!isAdmin) return <NotStaff email={session.user.email ?? 'This account'} onExit={onExit} />;
 
-  const lock = () => {
-    try {
-      window.sessionStorage.removeItem(SESSION_KEY);
-    } catch {
-      // ignore
-    }
-    setUnlocked(false);
-  };
+  const lock = () => void signOut();
 
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 74px)', background: c.cream }}>
@@ -308,8 +364,9 @@ export function Admin({ onExit, onEditApartment }: Props) {
             gap: 10,
           }}
         >
+          <span style={{ color: c.onNavyFaint, fontSize: 11.5, wordBreak: 'break-all' }}>{session.user.email}</span>
           <a onClick={lock} style={{ color: c.onNavy, fontSize: 12.5, cursor: 'pointer' }}>
-            Lock admin
+            Sign out
           </a>
           <a onClick={onExit} style={{ color: c.onNavy, fontSize: 12.5, cursor: 'pointer' }}>
             ← Exit to Website
@@ -318,6 +375,11 @@ export function Admin({ onExit, onEditApartment }: Props) {
       </aside>
 
       <div style={{ flex: 1, padding: '36px 40px', overflow: 'auto', minWidth: 0 }}>
+        {loadError && (
+          <p role="alert" style={{ background: '#F1E4E4', color: c.danger, padding: '10px 14px', borderRadius: 6, fontSize: 13, margin: '0 0 20px' }}>
+            Could not load bookings: {loadError}
+          </p>
+        )}
         {tab === 'overview' && <Dashboard onViewBookings={() => setTab('bookings')} />}
         {tab === 'bookings' && <BookingsTab />}
         {tab === 'calendar' && <CalendarTab />}
@@ -341,6 +403,9 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
     const pending = bookings.filter((b) => b.status === 'pending');
     const cancelled = bookings.filter((b) => b.status === 'cancelled');
     const revenue = confirmed.reduce((s, b) => s + b.total, 0);
+    const collected = bookings
+      .filter((b) => b.paymentStatus === 'paid')
+      .reduce((s, b) => s + (b.paidAmount ?? b.amountDue), 0);
     const monthRevenue = confirmed
       .filter((b) => b.checkIn >= mStart && b.checkIn < mEnd)
       .reduce((s, b) => s + b.total, 0);
@@ -357,6 +422,7 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
       confirmed,
       pending,
       cancelled,
+      collected,
       revenue,
       monthRevenue,
       arrivals,
@@ -407,7 +473,8 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
         <StatCard label="Total Bookings" value={String(bookings.length)} hint={`${stats.cancelled.length} cancelled`} />
         <StatCard label="Confirmed" value={String(stats.confirmed.length)} />
         <StatCard label="Pending" value={String(stats.pending.length)} hint="awaiting confirmation" />
-        <StatCard label="Confirmed Revenue" value={fmt(stats.revenue)} hint="all time" />
+        <StatCard label="Confirmed Revenue" value={fmt(stats.revenue)} hint="all time, incl. deposits" />
+        <StatCard label="Collected Online" value={fmt(stats.collected)} hint="paid through Paystack" />
         <StatCard label="This Month" value={fmt(stats.monthRevenue)} hint="confirmed, by check-in date" />
         <StatCard label="Occupancy This Month" value={`${stats.occupancy}%`} hint="incl. blocked nights" />
         <StatCard label="Arrivals Today" value={String(stats.arrivals.length)} />
@@ -594,10 +661,11 @@ function BookingsTab() {
 
 function BookingRow({ b }: { b: BookingRecord }) {
   const nights = daysBetween(b.checkIn, b.checkOut);
-  const setStatus = (status: BookingStatus) => updateBooking(b.ref, { status });
+  const report = (e: unknown) => window.alert(e instanceof Error ? e.message : 'That did not save. Please try again.');
+  const setStatus = (status: BookingStatus) => updateBooking(b.ref, { status }).catch(report);
   const del = () => {
     if (window.confirm(`Delete booking ${b.ref} permanently? Cancelling is usually enough.`)) {
-      removeBooking(b.ref);
+      removeBooking(b.ref).catch(report);
     }
   };
 
@@ -616,12 +684,23 @@ function BookingRow({ b }: { b: BookingRecord }) {
       <span>{aptName(b.apartmentId)}</span>
       <span>{fmtRange(b.checkIn, b.checkOut)}</span>
       <span>{nights}</span>
-      <span>{fmt(b.total)}</span>
-      <span>{PAYMENT_LABEL[b.payment] ?? b.payment}</span>
+      <span>
+        {fmt(b.total)}
+        {b.deposit > 0 && (
+          <span style={{ display: 'block', fontSize: 11.5, color: c.faint }}>incl. {fmt(b.deposit)} deposit</span>
+        )}
+      </span>
+      <span>
+        <span style={{ display: 'block' }}>{PAYMENT_LABEL[b.payment] ?? b.payment}</span>
+        <PaymentPill status={b.paymentStatus} />
+        {b.paymentRef && (
+          <span style={{ display: 'block', fontSize: 11, color: c.faint, marginTop: 2 }}>{b.paymentRef}</span>
+        )}
+      </span>
       <span style={{ textTransform: 'capitalize' }}>{b.source}</span>
       <StatusPill status={b.status} />
       <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {b.status !== 'confirmed' && (
+        {b.status !== 'confirmed' && b.paymentStatus !== 'paid' && (
           <button onClick={() => setStatus('confirmed')} style={smallBtn(c.sageBg, c.sageText)}>
             Confirm
           </button>
@@ -665,7 +744,9 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
   const total = totalOverride === '' ? suggested : Number(totalOverride) || 0;
   const free = isAvailable(apartmentId, checkIn, checkOut, bookings, blocks);
 
-  const submit = (e: FormEvent) => {
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!checkIn || !checkOut || daysBetween(checkIn, checkOut) <= 0) {
       setError('Enter a valid check-in and check-out.');
@@ -679,30 +760,37 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
       setError('Those dates are already held for this room. Cancel the clashing booking or remove the block first.');
       return;
     }
-    addBooking({
-      ref: newBookingRef(),
-      apartmentId,
-      checkIn,
-      checkOut,
-      adults: Number(adults) || 1,
-      children: 0,
-      guestName: guestName.trim(),
-      guestEmail: guestEmail.trim(),
-      guestPhone: guestPhone.trim(),
-      payment,
-      total,
-      status,
-      source: 'offline',
-      note: note.trim(),
-      createdAt: new Date().toISOString(),
-    });
-    onDone();
+    setSaving(true);
+    setError(null);
+    try {
+      await addBooking({
+        apartmentId,
+        checkIn,
+        checkOut,
+        adults: Number(adults) || 1,
+        children: 0,
+        guestName: guestName.trim(),
+        guestEmail: guestEmail.trim(),
+        guestPhone: guestPhone.trim(),
+        payment,
+        total,
+        deposit: 0,
+        amountDue: total,
+        status,
+        source: 'offline',
+        note: note.trim(),
+      });
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save the booking.');
+      setSaving(false);
+    }
   };
 
   const col: CSSProperties = { display: 'flex', flexDirection: 'column' };
 
   return (
-    <form onSubmit={submit} style={{ ...panel, padding: 22, marginBottom: 24 }}>
+    <form onSubmit={(e) => void submit(e)} style={{ ...panel, padding: 22, marginBottom: 24 }}>
       <h3 style={sectionH3}>New offline booking</h3>
       <p style={{ fontSize: 12.5, color: c.faint, margin: '0 0 16px' }}>
         For reservations taken by phone, WhatsApp or walk-in. Saving locks the dates on the website.
@@ -788,7 +876,9 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
       {error && <p style={{ color: c.danger, fontSize: 12.5, margin: '14px 0 0' }}>{error}</p>}
 
       <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-        <button type="submit" style={btnPrimary}>Save booking</button>
+        <button type="submit" disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.7 : 1 }}>
+          {saving ? 'Saving…' : 'Save booking'}
+        </button>
         <button type="button" onClick={onDone} style={btnGhost}>Cancel</button>
       </div>
     </form>
@@ -917,7 +1007,7 @@ function BlockForm() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSaved(false);
     if (!start || !end || daysBetween(start, end) <= 0) {
@@ -941,7 +1031,14 @@ function BlockForm() {
       setError('That range overlaps an existing block for the same room.');
       return;
     }
-    ids.forEach((id) => addBlock({ apartmentId: id, start, end, reason: reason.trim() }));
+    try {
+      for (const id of ids) {
+        await addBlock({ apartmentId: id, start, end, reason: reason.trim() });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save the block.');
+      return;
+    }
     setStart('');
     setEnd('');
     setReason('');
@@ -950,7 +1047,7 @@ function BlockForm() {
   };
 
   return (
-    <form onSubmit={submit} style={{ ...panel, padding: 22 }}>
+    <form onSubmit={(e) => void submit(e)} style={{ ...panel, padding: 22 }}>
       <h3 style={sectionH3}>Block dates</h3>
       <p style={{ fontSize: 12.5, color: c.faint, margin: '0 0 16px' }}>
         Take a room off sale for maintenance, owner use, or a stay confirmed elsewhere without guest details.
@@ -1008,7 +1105,10 @@ function BlockList({ blocks }: { blocks: DateBlock[] }) {
             <span style={{ fontWeight: 600, color: c.navy }}>{aptName(b.apartmentId)}</span>
             <span>{fmtRange(b.start, b.end)}</span>
             <span style={{ color: c.faint }}>{b.reason || '—'}</span>
-            <button onClick={() => removeBlock(b.id)} style={smallBtn('#F1E4E4', c.danger)}>
+            <button
+              onClick={() => removeBlock(b.id).catch((e: unknown) => window.alert(e instanceof Error ? e.message : 'Could not remove the block.'))}
+              style={smallBtn('#F1E4E4', c.danger)}
+            >
               Unblock
             </button>
           </div>

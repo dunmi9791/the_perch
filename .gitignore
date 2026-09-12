@@ -2,3 +2,10 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# Edge function secrets for `supabase functions serve`
+supabase/functions/.env
+
+# Editor and Windows artefacts
+.idea/
+*:Zone.Identifier

@@ -195,14 +195,13 @@ export const FAQS = [
 ];
 
 export const PAYMENT_OPTIONS = [
-  { key: 'paystack', label: 'Pay with Paystack', desc: 'Secure card payment via Paystack' },
-  { key: 'flutterwave', label: 'Pay with Flutterwave', desc: 'Secure card payment via Flutterwave' },
+  { key: 'paystack', label: 'Pay now with Paystack', desc: 'Card, bank transfer or USSD — confirmed instantly' },
   {
     key: 'transfer',
     label: 'Bank Transfer',
-    desc: 'Pay via bank transfer, upload evidence for verification',
+    desc: 'Transfer the amount due; we confirm once it lands',
   },
-  { key: 'arrival', label: 'Pay on Arrival', desc: 'Available where enabled by management' },
+  { key: 'arrival', label: 'Pay on Arrival', desc: 'For stays booked at least 48 hours ahead' },
 ] as const;
 
 export const BANK_DETAILS = {

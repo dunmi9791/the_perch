@@ -5,13 +5,41 @@ import { APARTMENTS, findApartment } from '../data/apartments';
 import { BANK_DETAILS, PAYMENT_OPTIONS } from '../data/content';
 import { bedroomsLabel, daysBetween, fmt, nightsLabel } from '../lib/format';
 import { priceBreakdown } from '../lib/pricing';
-import { isAvailable } from '../lib/occupancy';
+import { isAvailable, todayIso } from '../lib/occupancy';
 import { fitsCapacity, guestError, stayError, totalGuests } from '../lib/validation';
+import { arrivalPaymentAllowed } from '@shared/booking-input.ts';
 import { useStore } from '../lib/store';
 import { btnGhost, btnPrimary, c, CONTACT, field, label, serif } from '../theme';
 import { ImageSlot } from '../components/ImageSlot';
 import { BookingSummary } from '../components/BookingSummary';
 import { CheckIcon } from '../components/Icons';
+
+/** Where the confirm button is in its journey; anything but 'idle' disables it. */
+export type PaymentPhase = 'idle' | 'saving' | 'paying' | 'verifying';
+
+/** What the server confirmed after a successful Paystack payment. */
+export interface PaymentReceipt {
+  reference: string;
+  /** Naira. */
+  amount: number;
+  channel: string | null;
+}
+
+const PHASE_LABEL: Record<Exclude<PaymentPhase, 'idle'>, string> = {
+  saving: 'Saving your booking…',
+  paying: 'Complete the payment in the Paystack window…',
+  verifying: 'Confirming your payment…',
+};
+
+const CHANNEL_LABEL: Record<string, string> = {
+  card: 'Card',
+  bank: 'Bank',
+  bank_transfer: 'Bank transfer',
+  ussd: 'USSD',
+  qr: 'QR',
+  mobile_money: 'Mobile money',
+  apple_pay: 'Apple Pay',
+};
 
 interface Props {
   booking: BookingState;
@@ -19,6 +47,11 @@ interface Props {
   onBookingChange: (patch: Partial<BookingState>) => void;
   onGuestChange: (patch: Partial<GuestDetails>) => void;
   onConfirm: () => void;
+  phase: PaymentPhase;
+  receipt: PaymentReceipt | null;
+  /** Why the server refused the last attempt, shown on whichever step can fix it. */
+  submitError: string | null;
+  onDismissError: () => void;
 }
 
 const STEPS = [
@@ -35,6 +68,16 @@ const panel = {
   borderRadius: 10,
 } as const;
 
+const infoBox = {
+  background: c.cream,
+  borderRadius: 8,
+  padding: 18,
+  marginBottom: 20,
+  fontSize: 13.5,
+  color: c.navySoft,
+  lineHeight: 1.7,
+} as const;
+
 const stepHeading = {
   fontFamily: serif,
   fontSize: 22,
@@ -43,7 +86,18 @@ const stepHeading = {
   fontWeight: 600,
 } as const;
 
-export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, onConfirm }: Props) {
+export function Booking({
+  booking,
+  bookingRef,
+  onBookingChange,
+  onGuestChange,
+  onConfirm,
+  phase,
+  receipt,
+  submitError,
+  onDismissError,
+}: Props) {
+  const submitting = phase !== 'idle';
   const nights = daysBetween(booking.checkIn, booking.checkOut);
   const selectedApt = findApartment(booking.apartmentId);
   const breakdown = priceBreakdown(selectedApt, booking.checkIn, booking.checkOut);
@@ -57,9 +111,9 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
   const guestComplete = guestProblem === null;
   const guestStarted = Boolean(booking.guest.name || booking.guest.email || booking.guest.phone);
 
-  const { bookings, blocks } = useStore();
+  const { holds, blocks } = useStore();
   const partySize = totalGuests(booking.adults, booking.children);
-  const aptFree = (id: number) => isAvailable(id, booking.checkIn, booking.checkOut, bookings, blocks);
+  const aptFree = (id: number) => isAvailable(id, booking.checkIn, booking.checkOut, holds, blocks);
   /** A room can be chosen only if it is free for the dates and big enough for the party. */
   const aptSelectable = (id: number) => {
     const apt = findApartment(id);
@@ -67,6 +121,9 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
   };
   const selectionValid = booking.apartmentId !== null && aptSelectable(booking.apartmentId);
   const isTransfer = booking.payment === 'transfer';
+  const isPaystack = booking.payment === 'paystack';
+  const arrivalAllowed = arrivalPaymentAllowed(booking.checkIn, todayIso());
+  const dueNow = breakdown.valid ? breakdown.dueOnline : 0;
 
   // Each step is a fresh page of the flow; land at the top of it.
   useEffect(() => {
@@ -132,6 +189,35 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
           );
         })}
       </div>
+
+      {submitError && booking.step < 5 && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 16,
+            background: '#F1E4E4',
+            color: c.danger,
+            border: '1px solid rgba(184,79,79,0.3)',
+            borderRadius: 8,
+            padding: '12px 16px',
+            marginBottom: 24,
+            fontSize: 13.5,
+          }}
+        >
+          <span>{submitError}</span>
+          <button
+            type="button"
+            onClick={onDismissError}
+            aria-label="Dismiss"
+            style={{ background: 'none', border: 'none', color: c.danger, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* STEP 1 — DATES */}
       {booking.step === 1 && (
@@ -430,10 +516,12 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
               {PAYMENT_OPTIONS.map((po) => {
                 const active = booking.payment === po.key;
+                const disabled = po.key === 'arrival' && !arrivalAllowed;
                 return (
                   <div
                     key={po.key}
-                    onClick={() => onBookingChange({ payment: po.key as PaymentMethod })}
+                    onClick={() => !disabled && onBookingChange({ payment: po.key as PaymentMethod })}
+                    aria-disabled={disabled}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -441,7 +529,8 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
                       border: `2px solid ${active ? c.gold : c.hairline}`,
                       borderRadius: 8,
                       padding: 16,
-                      cursor: 'pointer',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.5 : 1,
                     }}
                   >
                     <div
@@ -474,18 +563,21 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
               })}
             </div>
 
+            {isPaystack && breakdown.valid && (
+              <div style={infoBox}>
+                <p style={{ margin: '0 0 4px' }}>
+                  You will pay <strong>{fmt(dueNow)}</strong> now through Paystack — by card, bank transfer or USSD —
+                  and your booking is confirmed the moment it goes through.
+                </p>
+                <p style={{ margin: 0 }}>
+                  The refundable deposit of <strong>{fmt(breakdown.deposit)}</strong> is collected at check-in and
+                  returned after checkout.
+                </p>
+              </div>
+            )}
+
             {isTransfer && (
-              <div
-                style={{
-                  background: c.cream,
-                  borderRadius: 8,
-                  padding: 18,
-                  marginBottom: 20,
-                  fontSize: 13.5,
-                  color: c.navySoft,
-                  lineHeight: 1.7,
-                }}
-              >
+              <div style={infoBox}>
                 <p style={{ margin: '0 0 4px' }}>
                   <strong>Bank:</strong> {BANK_DETAILS.bank}
                 </p>
@@ -495,19 +587,40 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
                 <p style={{ margin: '0 0 4px' }}>
                   <strong>Account Number:</strong> {BANK_DETAILS.accountNumber}
                 </p>
+                <p style={{ margin: '0 0 4px' }}>
+                  <strong>Amount:</strong> {breakdown.valid ? fmt(dueNow) : '—'}
+                  {breakdown.valid && ` (the ${fmt(breakdown.deposit)} deposit is collected at check-in)`}
+                </p>
                 <p style={{ margin: 0 }}>
-                  Booking reference will be generated after submission. Upload proof of payment to complete
-                  your reservation — it will be marked “Awaiting Verification” until confirmed.
+                  Use your booking reference as the transfer narration. Your reservation shows as “Awaiting
+                  Verification” until we confirm the payment.
                 </p>
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => goTo(3)} style={btnGhost}>
+            {booking.payment === 'arrival' && !arrivalAllowed && (
+              <div style={{ ...infoBox, color: c.danger }}>
+                Pay on Arrival is only available for stays booked at least 48 hours ahead. Please choose another
+                method.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => goTo(3)} disabled={submitting} style={btnGhost}>
                 Back
               </button>
-              <button onClick={onConfirm} style={btnPrimary}>
-                {isTransfer ? 'Submit & Upload Evidence' : 'Confirm & Pay'}
+              <button
+                onClick={onConfirm}
+                disabled={submitting}
+                style={{ ...btnPrimary, opacity: submitting ? 0.7 : 1, cursor: submitting ? 'wait' : 'pointer' }}
+              >
+                {phase !== 'idle'
+                  ? PHASE_LABEL[phase]
+                  : isPaystack
+                    ? `Pay ${fmt(dueNow)} with Paystack`
+                    : isTransfer
+                      ? 'Submit Booking'
+                      : 'Confirm Booking'}
               </button>
             </div>
           </div>
@@ -548,7 +661,13 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
               fontWeight: 600,
             }}
           >
-            {isTransfer ? 'Booking Received — Awaiting Verification' : 'Booking Confirmed!'}
+            {receipt
+              ? 'Payment Received — Booking Confirmed!'
+              : isTransfer
+                ? 'Booking Received — Awaiting Verification'
+                : booking.payment === 'arrival'
+                  ? 'Booking Received'
+                  : 'Booking Confirmed!'}
           </h2>
           <p style={{ color: c.body, fontSize: 14, margin: '0 0 28px' }}>
             Booking Reference <strong style={{ color: c.navy }}>{bookingRef ?? 'PRC-00000'}</strong>
@@ -571,11 +690,24 @@ export function Booking({ booking, bookingRef, onBookingChange, onGuestChange, o
             <ConfirmRow label="Apartment" value={selectedApt?.name ?? '—'} />
             <ConfirmRow label="Check-in" value={booking.checkIn || '—'} />
             <ConfirmRow label="Check-out" value={booking.checkOut || '—'} />
+            {receipt ? (
+              <>
+                <ConfirmRow label="Paid now" value={fmt(receipt.amount)} />
+                <ConfirmRow
+                  label="Paystack reference"
+                  value={`${receipt.reference}${receipt.channel ? ` · ${CHANNEL_LABEL[receipt.channel] ?? receipt.channel}` : ''}`}
+                />
+              </>
+            ) : (
+              <ConfirmRow label="Due before arrival" value={breakdown.valid ? fmt(breakdown.dueOnline) : '—'} />
+            )}
+            <ConfirmRow label="Deposit at check-in" value={breakdown.valid ? fmt(breakdown.deposit) : '—'} />
             <ConfirmRow label="Total" value={breakdown.valid ? fmt(breakdown.total) : '—'} />
           </div>
           <p style={{ fontSize: 13, color: c.faint, margin: '0 0 28px' }}>
-            A confirmation has been sent to {booking.guest.email || 'your email address'}. Check-in
-            instructions will follow once your reservation is confirmed.
+            {receipt
+              ? `Paystack has emailed a receipt to ${booking.guest.email || 'your email address'}. Check-in instructions will follow before your arrival.`
+              : `A confirmation has been sent to ${booking.guest.email || 'your email address'}. Check-in instructions will follow once your reservation is confirmed.`}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => window.print()} style={{ ...btnPrimary, padding: '12px 24px', fontSize: 13.5 }}>

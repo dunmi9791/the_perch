@@ -19,8 +19,10 @@ import { About } from './screens/About';
 import { Contact } from './screens/Contact';
 import { Admin } from './screens/Admin';
 import { findApartment } from './data/apartments';
-import { priceBreakdown } from './lib/pricing';
-import { addBooking, getStore, newBookingRef } from './lib/store';
+import { getStore, refreshStore } from './lib/store';
+import { BookingError, createBooking, initializePayment, verifyPayment } from './lib/api';
+import { openPaystack } from './lib/paystack';
+import type { PaymentPhase, PaymentReceipt } from './screens/Booking';
 import { isAvailable } from './lib/occupancy';
 import { fitsCapacity, guestError, stayError } from './lib/validation';
 
@@ -83,6 +85,9 @@ export function App() {
   const [booking, setBooking] = useState<BookingState>(INITIAL_BOOKING);
   const [bookingRef, setBookingRef] = useState<string | null>(null);
   const [confirmedKey, setConfirmedKey] = useState<string | null>(null);
+  const [phase, setPhase] = useState<PaymentPhase>('idle');
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
 
   // The hash keeps the address bar meaningful and makes back/forward work
   // without pulling in a router for what is a single-page mockup.
@@ -137,12 +142,36 @@ export function App() {
   };
 
   /**
-   * Final gate before a booking is recorded. Every earlier step re-validates here
-   * so a stale or hand-edited state cannot slip through to confirmation.
+   * Takes an unpaid booking through the Paystack popup and verifies the result
+   * with the server. Only the server's verdict moves the guest to step 5.
    */
-  const confirmBooking = () => {
+  const payForBooking = async (ref: string) => {
+    setPhase('paying');
+    const init = await initializePayment(ref);
+    const popup = await openPaystack(init.accessCode);
+    setPhase('verifying');
+    const result = await verifyPayment(init.reference);
+    if (result.paid) {
+      setReceipt({ reference: init.reference, amount: result.amount, channel: result.channel });
+      patchBooking({ step: 5 });
+      return;
+    }
+    setSubmitError(
+      popup === 'closed'
+        ? 'Payment was not completed. Your dates are held for a short while, so you can try again below.'
+        : 'We could not confirm your payment yet. If you were charged, contact us with your booking reference and we will sort it out.',
+    );
+  };
+
+  /**
+   * Final gate before a booking is sent to the server. Every earlier step
+   * re-validates here so a stale or hand-edited state cannot slip through,
+   * and the server runs the same rules again before it saves anything.
+   */
+  const confirmBooking = async () => {
+    if (phase !== 'idle') return;
     const apt = findApartment(booking.apartmentId);
-    const { bookings, blocks } = getStore();
+    const { holds, blocks } = getStore();
     if (stayError(booking.checkIn, booking.checkOut)) {
       patchBooking({ step: 1 });
       return;
@@ -150,7 +179,7 @@ export function App() {
     if (
       !apt ||
       !fitsCapacity(apt, booking.adults, booking.children) ||
-      !isAvailable(apt.id, booking.checkIn, booking.checkOut, bookings, blocks)
+      !isAvailable(apt.id, booking.checkIn, booking.checkOut, holds, blocks)
     ) {
       patchBooking({ step: 2 });
       return;
@@ -160,37 +189,53 @@ export function App() {
       return;
     }
 
-    // Re-confirming the same booking (e.g. after going back to re-read the bank
-    // details) keeps its reference; anything else is a new reservation.
+    setSubmitError(null);
+    const wantsPaystack = booking.payment === 'paystack';
     const key = bookingKey(booking);
-    if (bookingRef && confirmedKey === key) {
-      patchBooking({ step: 5 });
-      return;
+
+    try {
+      // Re-confirming the same booking (e.g. after going back to re-read the bank
+      // details, or retrying a closed Paystack popup) keeps its reference.
+      let ref = bookingRef && confirmedKey === key ? bookingRef : null;
+      if (!ref) {
+        setPhase('saving');
+        const created = await createBooking({
+          apartmentId: apt.id,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          adults: Number(booking.adults) || 1,
+          children: Number(booking.children) || 0,
+          guest: booking.guest,
+          payment: booking.payment,
+        });
+        ref = created.ref;
+        setBookingRef(ref);
+        setConfirmedKey(key);
+        setReceipt(null);
+        void refreshStore();
+      }
+
+      if (wantsPaystack && !receipt) {
+        await payForBooking(ref);
+      } else {
+        patchBooking({ step: 5 });
+      }
+    } catch (e) {
+      const err = e instanceof BookingError ? e : new BookingError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
+      setSubmitError(err.message);
+      // Send the guest back to the step that can fix what the server rejected.
+      if (err.field === 'stay') patchBooking({ step: 1 });
+      else if (err.field === 'apartment') patchBooking({ step: 2 });
+      else if (err.field === 'guest') patchBooking({ step: 3 });
+      // A lapsed hold means the booking is gone; the next attempt starts fresh.
+      if (err.code === 'hold_expired' || err.code === 'not_found' || err.code === 'not_pending') {
+        setBookingRef(null);
+        setConfirmedKey(null);
+      }
+      void refreshStore();
+    } finally {
+      setPhase('idle');
     }
-    const ref = newBookingRef();
-    const bd = priceBreakdown(apt, booking.checkIn, booking.checkOut);
-    {
-      addBooking({
-        ref,
-        apartmentId: apt.id,
-        checkIn: booking.checkIn,
-        checkOut: booking.checkOut,
-        adults: Number(booking.adults) || 1,
-        children: Number(booking.children) || 0,
-        guestName: booking.guest.name.trim(),
-        guestEmail: booking.guest.email.trim(),
-        guestPhone: booking.guest.phone.trim(),
-        payment: booking.payment,
-        total: bd.valid ? bd.total : 0,
-        status: 'pending',
-        source: 'website',
-        note: [booking.guest.purpose, booking.guest.requests].filter(Boolean).join(' · '),
-        createdAt: new Date().toISOString(),
-      });
-    }
-    setBookingRef(ref);
-    setConfirmedKey(key);
-    patchBooking({ step: 5 });
   };
 
   const patchAvail = (patch: Partial<AvailabilityState>) => setAvail((a) => ({ ...a, ...patch }));
@@ -259,7 +304,11 @@ export function App() {
             bookingRef={bookingRef}
             onBookingChange={patchBooking}
             onGuestChange={patchGuest}
-            onConfirm={confirmBooking}
+            onConfirm={() => void confirmBooking()}
+            phase={phase}
+            receipt={receipt}
+            submitError={submitError}
+            onDismissError={() => setSubmitError(null)}
           />
         )}
 

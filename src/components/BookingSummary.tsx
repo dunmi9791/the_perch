@@ -62,10 +62,6 @@ export function BookingSummary({ apartment, breakdown, checkIn, checkOut }: Prop
             <span>Cleaning fee</span>
             <span>{fmt(breakdown.cleaning)}</span>
           </div>
-          <div style={row}>
-            <span>Deposit (refundable)</span>
-            <span>{fmt(breakdown.deposit)}</span>
-          </div>
           <div
             style={{
               ...row,
@@ -76,7 +72,15 @@ export function BookingSummary({ apartment, breakdown, checkIn, checkOut }: Prop
               marginTop: 2,
             }}
           >
-            <span>Total</span>
+            <span>Due before arrival</span>
+            <span>{fmt(breakdown.dueOnline)}</span>
+          </div>
+          <div style={row}>
+            <span>Deposit at check-in (refundable)</span>
+            <span>{fmt(breakdown.deposit)}</span>
+          </div>
+          <div style={{ ...row, color: c.faint, fontSize: 12.5 }}>
+            <span>Total stay value</span>
             <span>{fmt(breakdown.total)}</span>
           </div>
         </div>

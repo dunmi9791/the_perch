@@ -36,9 +36,9 @@ export function ApartmentDetail({
   const apt = findApartment(apartmentId) ?? APARTMENTS[0];
   const breakdown = priceBreakdown(apt, booking.checkIn, booking.checkOut);
   const related = APARTMENTS.filter((a) => a.id !== apt.id).slice(0, 3);
-  const { bookings, blocks } = useStore();
-  const cells = monthCells((iso) => dayStatus(apt.id, iso, bookings, blocks));
-  const datesFree = isAvailable(apt.id, booking.checkIn, booking.checkOut, bookings, blocks);
+  const { holds, blocks } = useStore();
+  const cells = monthCells((iso) => dayStatus(apt.id, iso, holds, blocks));
+  const datesFree = isAvailable(apt.id, booking.checkIn, booking.checkOut, holds, blocks);
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px 90px' }}>

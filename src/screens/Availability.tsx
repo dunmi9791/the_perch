@@ -19,12 +19,12 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
   const error = rangeReversed ? 'Check-out date must be after check-in date.' : null;
   const validRange = Boolean(avail.checkIn && avail.checkOut) && !error;
 
-  const { bookings, blocks } = useStore();
+  const { holds, blocks } = useStore();
   const totalGuests = Number(avail.adults || 1) + Number(avail.children || 0);
   const matches = APARTMENTS.filter(
     (a) =>
       a.maxGuests >= totalGuests &&
-      (!validRange || isAvailable(a.id, avail.checkIn, avail.checkOut, bookings, blocks)),
+      (!validRange || isAvailable(a.id, avail.checkIn, avail.checkOut, holds, blocks)),
   );
 
   const resultsLabel = error
