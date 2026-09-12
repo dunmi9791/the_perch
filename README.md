@@ -46,8 +46,11 @@ Then in the dashboard set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` for
 the site build, and the edge function secrets:
 
 ```bash
-npx supabase secrets set PAYSTACK_SECRET_KEY=sk_test_... SITE_ORIGIN=https://your-domain BOOKING_HOLD_MINUTES=30
+npx supabase secrets set PAYSTACK_SECRET_KEY=sk_test_... "SITE_ORIGIN=https://your-domain,http://localhost:5173" BOOKING_HOLD_MINUTES=30
 ```
+
+`SITE_ORIGIN` is a comma-separated list of origins allowed to call the
+functions from a browser; leave it unset to allow any origin while testing.
 
 For `npx supabase functions serve` locally, put the same values in
 `supabase/functions/.env` (see `.env.example` there; the file is gitignored).

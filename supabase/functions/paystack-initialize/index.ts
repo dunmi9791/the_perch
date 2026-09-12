@@ -5,7 +5,7 @@
  * code the browser needs to open the popup. The amount comes from the
  * booking row, never from the request.
  */
-import { gate, json, readJson } from '../_lib/http.ts';
+import { http, readJson } from '../_lib/http.ts';
 import { serviceClient } from '../_lib/db.ts';
 import { initializeTransaction } from '../_lib/paystack.ts';
 import { findApartment } from '../_shared/apartments.ts';
@@ -14,7 +14,7 @@ const HOLD_MINUTES = Number(Deno.env.get('BOOKING_HOLD_MINUTES') ?? '30');
 const MAX_ATTEMPTS = 5;
 
 Deno.serve(async (req) => {
-  const early = gate(req, 'POST');
+  const { early, json } = http(req, 'POST');
   if (early) return early;
 
   const body = await readJson(req);

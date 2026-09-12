@@ -7,7 +7,7 @@
  * lets the database's exclusion constraint settle any race for the same
  * nights.
  */
-import { gate, json, readJson } from '../_lib/http.ts';
+import { http, readJson } from '../_lib/http.ts';
 import { serviceClient } from '../_lib/db.ts';
 import { parseBookingInput } from '../_shared/booking-input.ts';
 import { PROPERTY_TIME_ZONE, todayIso } from '../_shared/dates.ts';
@@ -15,7 +15,7 @@ import { PROPERTY_TIME_ZONE, todayIso } from '../_shared/dates.ts';
 const HOLD_MINUTES = Number(Deno.env.get('BOOKING_HOLD_MINUTES') ?? '30');
 
 Deno.serve(async (req) => {
-  const early = gate(req, 'POST');
+  const { early, json } = http(req, 'POST');
   if (early) return early;
 
   const raw = await readJson(req);

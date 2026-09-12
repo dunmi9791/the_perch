@@ -4,13 +4,13 @@
  * Asks Paystack whether a transaction succeeded and, if so, marks the booking
  * paid. Safe to call repeatedly; the webhook may have got there first.
  */
-import { gate, json, readJson } from '../_lib/http.ts';
+import { http, readJson } from '../_lib/http.ts';
 import { serviceClient } from '../_lib/db.ts';
 import { verifyTransaction } from '../_lib/paystack.ts';
 import { applyTransaction } from '../_lib/payments.ts';
 
 Deno.serve(async (req) => {
-  const early = gate(req, 'POST');
+  const { early, json } = http(req, 'POST');
   if (early) return early;
 
   const body = await readJson(req);
