@@ -1,5 +1,5 @@
 import type { FilterState } from '../types';
-import { APARTMENTS } from '../data/apartments';
+import { useApartments } from '../data/apartments';
 import { bedroomsLabel, fmt } from '../lib/format';
 import { amenityChip, c, eyebrow, field, label, pageTitle, serif } from '../theme';
 import { ImageSlot } from '../components/ImageSlot';
@@ -29,7 +29,8 @@ export function Apartments({
   onViewApartment,
   onCheckAvailability,
 }: Props) {
-  const matches = APARTMENTS.filter((a) => {
+  const apartments = useApartments();
+  const matches = apartments.filter((a) => {
     if (Number(filters.guests) > 0 && a.maxGuests < Number(filters.guests)) return false;
     if (Number(filters.bedrooms) >= 0 && a.bedrooms !== Number(filters.bedrooms)) return false;
     if (Number(filters.maxPrice) > 0 && a.nightly > Number(filters.maxPrice)) return false;
@@ -151,7 +152,7 @@ export function Apartments({
       </div>
 
       <p style={{ fontSize: 13.5, color: c.bodyMuted, margin: '0 0 24px' }}>
-        {matches.length} of {APARTMENTS.length} apartments match your filters
+        {matches.length} of {apartments.length} apartments match your filters
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>

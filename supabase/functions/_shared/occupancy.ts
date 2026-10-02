@@ -1,4 +1,4 @@
-import type { DateBlock, StayHold } from './types.ts';
+import type { BookingStatus, DateBlock, StayHold } from './types.ts';
 import { isoDate } from './dates.ts';
 
 export type DayStatus = 'available' | 'pending' | 'confirmed' | 'blocked';
@@ -9,7 +9,7 @@ export function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd
 }
 
 /** Bookings that still hold their dates — cancelled ones release them. */
-export function activeBookings<T extends StayHold>(bookings: T[]): T[] {
+export function activeBookings<T extends { status: BookingStatus }>(bookings: T[]): T[] {
   return bookings.filter((b) => b.status !== 'cancelled');
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type {
+  Apartment,
   AvailabilityState,
   BookingState,
   FilterState,
@@ -19,6 +20,7 @@ import { About } from './screens/About';
 import { Contact } from './screens/Contact';
 import { Admin } from './screens/Admin';
 import { findApartment } from './data/apartments';
+import { MIN_ROOMS } from './lib/pricing';
 import { getStore, refreshStore } from './lib/store';
 import { BookingError, createBooking, initializePayment, verifyPayment } from './lib/api';
 import { openPaystack } from './lib/paystack';
@@ -28,7 +30,7 @@ import { fitsCapacity, guestError, stayError } from './lib/validation';
 
 /** Identity of a booking as submitted; a change to any of these is a new booking, not a retry. */
 function bookingKey(b: BookingState): string {
-  return [b.apartmentId, b.checkIn, b.checkOut, b.adults, b.children, b.guest.email.trim().toLowerCase()].join('|');
+  return [[...b.apartmentIds].sort((x, y) => x - y).join(','), b.checkIn, b.checkOut, b.adults, b.children, b.guest.email.trim().toLowerCase()].join('|');
 }
 
 const EMPTY_GUEST: GuestDetails = {
@@ -47,7 +49,7 @@ const INITIAL_BOOKING: BookingState = {
   checkOut: '',
   adults: '2',
   children: '0',
-  apartmentId: null,
+  apartmentIds: [],
   guest: EMPTY_GUEST,
   payment: 'transfer',
 };
@@ -117,7 +119,10 @@ export function App() {
   const patchGuest = (patch: Partial<GuestDetails>) =>
     setBooking((b) => ({ ...b, guest: { ...b.guest, ...patch } }));
 
-  /** Availability -> booking: carry the dates and skip to the room step only if they are valid. */
+  /**
+   * Availability -> booking: carry the dates and the picked room. The guest
+   * lands on the room step to add the rest, unless the dates need fixing.
+   */
   const selectFromAvailability = (id: number) => {
     setBooking((b) => ({
       ...b,
@@ -125,17 +130,17 @@ export function App() {
       checkOut: avail.checkOut,
       adults: avail.adults,
       children: avail.children,
-      apartmentId: id,
+      apartmentIds: [id],
       step: stayError(avail.checkIn, avail.checkOut) ? 1 : 2,
     }));
     navigate('booking');
   };
 
-  /** Detail -> booking: skip the dates step only when the picked range is actually bookable. */
+  /** Detail -> booking: add this room, then the dates step or the room step to pick the others. */
   const reserveFromDetail = () => {
     setBooking((b) => ({
       ...b,
-      apartmentId: detailId,
+      apartmentIds: b.apartmentIds.includes(detailId) ? b.apartmentIds : [...b.apartmentIds, detailId],
       step: stayError(b.checkIn, b.checkOut) ? 1 : 2,
     }));
     navigate('booking');
@@ -170,16 +175,16 @@ export function App() {
    */
   const confirmBooking = async () => {
     if (phase !== 'idle') return;
-    const apt = findApartment(booking.apartmentId);
+    const rooms = booking.apartmentIds.map((id) => findApartment(id));
     const { holds, blocks } = getStore();
     if (stayError(booking.checkIn, booking.checkOut)) {
       patchBooking({ step: 1 });
       return;
     }
     if (
-      !apt ||
-      !fitsCapacity(apt, booking.adults, booking.children) ||
-      !isAvailable(apt.id, booking.checkIn, booking.checkOut, holds, blocks)
+      rooms.length < MIN_ROOMS ||
+      rooms.some((a) => !a || !isAvailable(a.id, booking.checkIn, booking.checkOut, holds, blocks)) ||
+      !fitsCapacity(rooms as Apartment[], booking.adults, booking.children)
     ) {
       patchBooking({ step: 2 });
       return;
@@ -200,7 +205,7 @@ export function App() {
       if (!ref) {
         setPhase('saving');
         const created = await createBooking({
-          apartmentId: apt.id,
+          apartmentIds: booking.apartmentIds,
           checkIn: booking.checkIn,
           checkOut: booking.checkOut,
           adults: Number(booking.adults) || 1,

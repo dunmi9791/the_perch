@@ -1,7 +1,7 @@
 import type { AvailabilityState } from '../types';
-import { APARTMENTS } from '../data/apartments';
+import { useApartments } from '../data/apartments';
 import { bedroomsLabel, fmt } from '../lib/format';
-import { priceBreakdown } from '../lib/pricing';
+import { MIN_ROOMS, roomStayTotal } from '../lib/pricing';
 import { isAvailable } from '../lib/occupancy';
 import { useStore } from '../lib/store';
 import { amenityChip, c, eyebrow, field, label, pageTitle, serif } from '../theme';
@@ -20,17 +20,18 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
   const validRange = Boolean(avail.checkIn && avail.checkOut) && !error;
 
   const { holds, blocks } = useStore();
-  const totalGuests = Number(avail.adults || 1) + Number(avail.children || 0);
-  const matches = APARTMENTS.filter(
-    (a) =>
-      a.maxGuests >= totalGuests &&
-      (!validRange || isAvailable(a.id, avail.checkIn, avail.checkOut, holds, blocks)),
+  // Parties spread across rooms (minimum MIN_ROOMS per booking), so every free room is a candidate.
+  const apartments = useApartments();
+  const matches = apartments.filter(
+    (a) => !validRange || isAvailable(a.id, avail.checkIn, avail.checkOut, holds, blocks),
   );
 
   const resultsLabel = error
     ? ''
     : validRange
-      ? `${matches.length} apartment(s) available for your dates`
+      ? matches.length >= MIN_ROOMS
+        ? `${matches.length} rooms available for your dates. Bookings are for a minimum of ${MIN_ROOMS} rooms — pick one to start, then add the rest.`
+        : `Fewer than ${MIN_ROOMS} rooms are free for these dates, and bookings need at least ${MIN_ROOMS}. Try other dates or message us on WhatsApp.`
       : 'Select your dates to see live availability';
 
   return (
@@ -116,7 +117,6 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {matches.map((apt) => {
-          const bd = priceBreakdown(apt, avail.checkIn, avail.checkOut);
           return (
             <div
               key={apt.id}
@@ -189,7 +189,7 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
                 </div>
                 {validRange && (
                   <span style={{ fontSize: 12, color: c.body }}>
-                    {bd.valid ? fmt(bd.stayOnlyTotal) : '—'} total
+                    {fmt(roomStayTotal(apt, avail.checkIn, avail.checkOut))} total, before tax
                   </span>
                 )}
                 <button

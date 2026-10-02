@@ -1,4 +1,4 @@
-import type { Apartment } from './types.ts';
+import type { Apartment, RoomRate } from './types.ts';
 
 const DOWNSTAIRS_AMENITIES = [
   'Wi-Fi',
@@ -58,7 +58,11 @@ const TURACO_SHORT = 'The bigger room upstairs with extra space and premium furn
 const TURACO_LONG =
   'The bigger room upstairs with extra space and premium furnishing. Well suited to guests who want the most comfortable stay on offer.';
 
-/** Nightly rates from the official rate card (Sept 2026). Weekend rate is the same as weekday. */
+/**
+ * Room descriptions. The rates here are the September 2026 rate card and
+ * serve only as a fallback until the live rates load: the `room_rates`
+ * table is the source of truth, and staff edit it from the admin screen.
+ */
 export const APARTMENTS: Apartment[] = [
   {
     id: 1,
@@ -80,8 +84,6 @@ export const APARTMENTS: Apartment[] = [
     weekend: 70000,
     weekly: 490000,
     monthly: 2100000,
-    cleaning: 8000,
-    deposit: 20000,
     minStay: 1,
     checkinTime: '2:00 PM',
     checkoutTime: '11:00 AM',
@@ -106,8 +108,6 @@ export const APARTMENTS: Apartment[] = [
     weekend: 70000,
     weekly: 490000,
     monthly: 2100000,
-    cleaning: 8000,
-    deposit: 20000,
     minStay: 1,
     checkinTime: '2:00 PM',
     checkoutTime: '11:00 AM',
@@ -132,8 +132,6 @@ export const APARTMENTS: Apartment[] = [
     weekend: 70000,
     weekly: 490000,
     monthly: 2100000,
-    cleaning: 8000,
-    deposit: 20000,
     minStay: 1,
     checkinTime: '2:00 PM',
     checkoutTime: '11:00 AM',
@@ -158,8 +156,6 @@ export const APARTMENTS: Apartment[] = [
     weekend: 70000,
     weekly: 490000,
     monthly: 2100000,
-    cleaning: 10000,
-    deposit: 30000,
     minStay: 1,
     checkinTime: '2:00 PM',
     checkoutTime: '11:00 AM',
@@ -184,8 +180,6 @@ export const APARTMENTS: Apartment[] = [
     weekend: 90000,
     weekly: 630000,
     monthly: 2700000,
-    cleaning: 12000,
-    deposit: 35000,
     minStay: 1,
     checkinTime: '2:00 PM',
     checkoutTime: '11:00 AM',
@@ -210,14 +204,23 @@ export const APARTMENTS: Apartment[] = [
     weekend: 90000,
     weekly: 630000,
     monthly: 2700000,
-    cleaning: 12000,
-    deposit: 35000,
     minStay: 1,
     checkinTime: '2:00 PM',
     checkoutTime: '11:00 AM',
   },
 ];
 
-export function findApartment(id: number | null): Apartment | undefined {
-  return APARTMENTS.find((a) => a.id === id);
+export function findApartment(id: number | null, list: Apartment[] = APARTMENTS): Apartment | undefined {
+  return list.find((a) => a.id === id);
+}
+
+/** The rooms with their live rates applied. A room missing from `rates` keeps its fallback rates. */
+export function applyRates(rates: RoomRate[], base: Apartment[] = APARTMENTS): Apartment[] {
+  const byId = new Map(rates.map((r) => [r.apartmentId, r]));
+  return base.map((a) => {
+    const r = byId.get(a.id);
+    return r
+      ? { ...a, nightly: r.nightly, weekend: r.weekend, weekly: r.weekly, monthly: r.monthly, minStay: r.minStay }
+      : a;
+  });
 }

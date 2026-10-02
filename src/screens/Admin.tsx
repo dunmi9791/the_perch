@@ -8,7 +8,7 @@ import {
   STATUS_STYLE,
 } from '../data/admin';
 import type { AdminTab } from '../data/admin';
-import { APARTMENTS, findApartment } from '../data/apartments';
+import { APARTMENTS, findApartment, useApartments, usePricing } from '../data/apartments';
 import { daysBetween, fmt } from '../lib/format';
 import { DAY_COLORS, upcomingDays } from '../lib/calendar';
 import {
@@ -25,6 +25,8 @@ import {
   addBooking,
   removeBlock,
   removeBooking,
+  setPricingSettings,
+  setRoomRates,
   signIn,
   signOut,
   updateBooking,
@@ -32,7 +34,7 @@ import {
   useStore,
 } from '../lib/store';
 import { btnGhost, btnPrimary, c, field, label, serif } from '../theme';
-import type { BookingRecord, BookingStatus, DateBlock } from '../types';
+import type { Apartment, BookingRecord, BookingStatus, DateBlock, PricingSettings, RateChange, RoomRate } from '../types';
 
 interface Props {
   onExit: () => void;
@@ -131,6 +133,10 @@ function fmtRange(a: string, b: string): string {
 
 function aptName(id: number): string {
   return findApartment(id)?.name ?? `Apartment ${id}`;
+}
+
+function roomNames(ids: number[]): string {
+  return ids.length ? ids.map(aptName).join(', ') : '—';
 }
 
 function monthBounds(now = new Date()): { start: string; end: string } {
@@ -394,7 +400,7 @@ export function Admin({ onExit, onEditApartment }: Props) {
 /* ---------- dashboard ---------- */
 
 function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
-  const { bookings, blocks } = useStore();
+  const { bookings, holds, blocks } = useStore();
   const today = todayIso();
   const { start: mStart, end: mEnd } = monthBounds();
 
@@ -414,7 +420,7 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
     const inHouse = confirmed.filter((b) => b.checkIn <= today && today < b.checkOut);
     const nightsInMonth = daysBetween(mStart, mEnd);
     const held = APARTMENTS.reduce(
-      (s, a) => s + nightsHeldInRange(a.id, mStart, mEnd, bookings, blocks),
+      (s, a) => s + nightsHeldInRange(a.id, mStart, mEnd, holds, blocks),
       0,
     );
     const occupancy = nightsInMonth ? Math.round((held / (nightsInMonth * APARTMENTS.length)) * 100) : 0;
@@ -430,7 +436,7 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
       inHouse,
       occupancy,
     };
-  }, [bookings, blocks, today, mStart, mEnd]);
+  }, [bookings, holds, blocks, today, mStart, mEnd]);
 
   const upcoming = useMemo(() => {
     const limit = isoDate(new Date(Date.now() + 7 * 86400000));
@@ -442,11 +448,14 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
   const perApartment = useMemo(
     () =>
       APARTMENTS.map((a) => {
-        const mine = activeBookings(bookings).filter((b) => b.apartmentId === a.id);
+        const mine = activeBookings(bookings).filter((b) => b.apartmentIds.includes(a.id));
         return {
           name: a.name,
           count: mine.length,
-          revenue: mine.filter((b) => b.status === 'confirmed').reduce((s, b) => s + b.total, 0),
+          // A multi-room booking's total is shared evenly across its rooms.
+          revenue: mine
+            .filter((b) => b.status === 'confirmed')
+            .reduce((s, b) => s + b.total / Math.max(1, b.apartmentIds.length), 0),
         };
       }),
     [bookings],
@@ -496,7 +505,7 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
             {upcoming.map((b) => (
               <div key={b.ref} style={{ ...bodyRow('1.2fr 1fr 1.2fr 0.8fr'), minWidth: 0 }}>
                 <span style={{ fontWeight: 600, color: c.navy }}>{b.guestName || '—'}</span>
-                <span>{aptName(b.apartmentId)}</span>
+                <span>{roomNames(b.apartmentIds)}</span>
                 <span>{fmtRange(b.checkIn, b.checkOut)}</span>
                 <StatusPill status={b.status} />
               </div>
@@ -552,7 +561,7 @@ function Dashboard({ onViewBookings }: { onViewBookings: () => void }) {
           <div key={b.ref} style={bodyRow('0.9fr 1.2fr 0.9fr 1.2fr 0.9fr 0.8fr 0.8fr')}>
             <span style={{ fontWeight: 600, color: c.navy }}>{b.ref}</span>
             <span>{b.guestName || '—'}</span>
-            <span>{aptName(b.apartmentId)}</span>
+            <span>{roomNames(b.apartmentIds)}</span>
             <span>{fmtRange(b.checkIn, b.checkOut)}</span>
             <span>{fmt(b.total)}</span>
             <span style={{ textTransform: 'capitalize' }}>{b.source}</span>
@@ -681,7 +690,7 @@ function BookingRow({ b }: { b: BookingRecord }) {
           <span style={{ display: 'block', fontSize: 11.5, color: c.faint, fontStyle: 'italic' }}>{b.note}</span>
         )}
       </span>
-      <span>{aptName(b.apartmentId)}</span>
+      <span>{roomNames(b.apartmentIds)}</span>
       <span>{fmtRange(b.checkIn, b.checkOut)}</span>
       <span>{nights}</span>
       <span>
@@ -724,8 +733,8 @@ function BookingRow({ b }: { b: BookingRecord }) {
 }
 
 function OfflineBookingForm({ onDone }: { onDone: () => void }) {
-  const { bookings, blocks } = useStore();
-  const [apartmentId, setApartmentId] = useState(APARTMENTS[0].id);
+  const { holds, blocks } = useStore();
+  const [apartmentIds, setApartmentIds] = useState<number[]>([]);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guestName, setGuestName] = useState('');
@@ -738,11 +747,16 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const apt = findApartment(apartmentId);
-  const bd = priceBreakdown(apt, checkIn, checkOut);
+  const apartments = useApartments();
+  const pricing = usePricing();
+  const bd = priceBreakdown(apartmentIds.map((id) => findApartment(id, apartments)), checkIn, checkOut, pricing);
   const suggested = bd.valid ? bd.total : 0;
-  const total = totalOverride === '' ? suggested : Number(totalOverride) || 0;
-  const free = isAvailable(apartmentId, checkIn, checkOut, bookings, blocks);
+  const usingRateCard = totalOverride === '';
+  const total = usingRateCard ? suggested : Number(totalOverride) || 0;
+  const taken = apartmentIds.filter((id) => !isAvailable(id, checkIn, checkOut, holds, blocks));
+  const free = taken.length === 0;
+  const toggleRoom = (id: number) =>
+    setApartmentIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
 
   const [saving, setSaving] = useState(false);
 
@@ -752,19 +766,23 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
       setError('Enter a valid check-in and check-out.');
       return;
     }
+    if (apartmentIds.length === 0) {
+      setError('Choose at least one room.');
+      return;
+    }
     if (!guestName.trim()) {
       setError('Guest name is required.');
       return;
     }
     if (!free) {
-      setError('Those dates are already held for this room. Cancel the clashing booking or remove the block first.');
+      setError('Those dates are already held for one of these rooms. Cancel the clashing booking or remove the block first.');
       return;
     }
     setSaving(true);
     setError(null);
     try {
       await addBooking({
-        apartmentId,
+        apartmentIds,
         checkIn,
         checkOut,
         adults: Number(adults) || 1,
@@ -774,7 +792,7 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
         guestPhone: guestPhone.trim(),
         payment,
         total,
-        deposit: 0,
+        deposit: usingRateCard && bd.valid ? bd.deposit : 0,
         amountDue: total,
         status,
         source: 'offline',
@@ -796,14 +814,17 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
         For reservations taken by phone, WhatsApp or walk-in. Saving locks the dates on the website.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14 }}>
-        <div style={col}>
-          <label style={label} htmlFor="ob-apt">Room</label>
-          <select id="ob-apt" value={apartmentId} onChange={(e) => setApartmentId(Number(e.target.value))} style={field}>
+        <fieldset style={{ ...col, gridColumn: '1 / -1', border: 'none', padding: 0, margin: 0 }}>
+          <legend style={label}>Rooms</legend>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 18px', fontSize: 13.5, color: c.navy }}>
             {APARTMENTS.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+              <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={apartmentIds.includes(a.id)} onChange={() => toggleRoom(a.id)} />
+                {a.name}
+              </label>
             ))}
-          </select>
-        </div>
+          </div>
+        </fieldset>
         <div style={col}>
           <label style={label} htmlFor="ob-in">Check-in</label>
           <input id="ob-in" type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} style={field} />
@@ -859,7 +880,9 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
             style={field}
           />
           {suggested > 0 && (
-            <span style={{ fontSize: 11, color: c.faint, marginTop: 4 }}>Rate card: {fmt(suggested)}</span>
+            <span style={{ fontSize: 11, color: c.faint, marginTop: 4 }}>
+              Rate card: {fmt(suggested)} incl. tax and {fmt(pricing.cautionDeposit)} deposit
+            </span>
           )}
         </div>
         <div style={{ ...col, gridColumn: '1 / -1' }}>
@@ -870,7 +893,7 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
 
       {checkIn && checkOut && !free && (
         <p style={{ color: c.danger, fontSize: 12.5, margin: '14px 0 0' }}>
-          {apt?.name} is already held for part of these dates.
+          {roomNames(taken)} {taken.length === 1 ? 'is' : 'are'} already held for part of these dates.
         </p>
       )}
       {error && <p style={{ color: c.danger, fontSize: 12.5, margin: '14px 0 0' }}>{error}</p>}
@@ -888,7 +911,7 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
 /* ---------- calendar & blocks ---------- */
 
 function CalendarTab() {
-  const { bookings, blocks } = useStore();
+  const { bookings, holds, blocks } = useStore();
   const [start, setStart] = useState(todayIso());
   const days = upcomingDays(TIMELINE_DAYS, new Date(`${start}T00:00:00`));
 
@@ -902,7 +925,7 @@ function CalendarTab() {
     const bl = blocks.find((b) => b.apartmentId === aptId && b.start <= iso && iso < b.end);
     if (bl) return `Blocked: ${bl.reason || 'no reason given'}`;
     const bk = activeBookings(bookings).find(
-      (b) => b.apartmentId === aptId && b.checkIn <= iso && iso < b.checkOut,
+      (b) => b.apartmentIds.includes(aptId) && b.checkIn <= iso && iso < b.checkOut,
     );
     return bk ? `${bk.ref} · ${bk.guestName} (${STATUS_STYLE[bk.status].label})` : 'Available';
   };
@@ -951,7 +974,7 @@ function CalendarTab() {
               name={apt.name}
               cells={days.map((d) => ({
                 iso: d.iso,
-                status: dayStatus(apt.id, d.iso, bookings, blocks),
+                status: dayStatus(apt.id, d.iso, holds, blocks),
                 title: holderFor(apt.id, d.iso),
               }))}
             />
@@ -999,7 +1022,7 @@ function TimelineRow({
 }
 
 function BlockForm() {
-  const { bookings, blocks } = useStore();
+  const { holds, blocks } = useStore();
   const [target, setTarget] = useState<'all' | number>('all');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
@@ -1016,7 +1039,7 @@ function BlockForm() {
     }
     const ids = target === 'all' ? APARTMENTS.map((a) => a.id) : [target];
     const clashing = ids.filter(
-      (id) => !isAvailable(id, start, end, activeBookings(bookings), []),
+      (id) => !isAvailable(id, start, end, holds, []),
     );
     if (clashing.length) {
       setError(
@@ -1061,7 +1084,8 @@ function BlockForm() {
             onChange={(e) => setTarget(e.target.value === 'all' ? 'all' : Number(e.target.value))}
             style={field}
           >
-            <option value="all">All rooms</option>
+            <option value="all">All changes</option>
+          <option value="global">Tax &amp; deposit</option>
             {APARTMENTS.map((a) => (
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
@@ -1173,6 +1197,7 @@ function GuestsTab() {
 /* ---------- apartments & rates ---------- */
 
 function ApartmentsTab({ onEditApartment }: { onEditApartment: (id: number) => void }) {
+  const apartments = useApartments();
   return (
     <>
       <h1 style={h1}>Apartments</h1>
@@ -1186,7 +1211,7 @@ function ApartmentsTab({ onEditApartment }: { onEditApartment: (id: number) => v
           <span>Status</span>
           <span />
         </div>
-        {APARTMENTS.map((apt) => (
+        {apartments.map((apt) => (
           <div key={apt.id} style={bodyRow('1.6fr 1.2fr 0.8fr 1fr 0.8fr 0.8fr')}>
             <span style={{ fontWeight: 600, color: c.navy }}>{apt.name}</span>
             <span>{apt.type}</span>
@@ -1203,33 +1228,426 @@ function ApartmentsTab({ onEditApartment }: { onEditApartment: (id: number) => v
   );
 }
 
+type ValueKind = 'money' | 'nights' | 'percent';
+
+const RATE_FIELDS = [
+  { key: 'nightly', label: 'Nightly', kind: 'money' },
+  { key: 'weekend', label: 'Weekend', kind: 'money' },
+  { key: 'weekly', label: 'Weekly', kind: 'money' },
+  { key: 'monthly', label: 'Monthly', kind: 'money' },
+  { key: 'minStay', label: 'Min. stay', kind: 'nights' },
+] as const;
+
+type RateKey = (typeof RATE_FIELDS)[number]['key'];
+
+/** Labels for the database's field names in the change log. */
+const LOGGED_FIELD: Record<string, { label: string; kind: ValueKind }> = {
+  nightly: { label: 'Nightly', kind: 'money' },
+  weekend: { label: 'Weekend', kind: 'money' },
+  weekly: { label: 'Weekly', kind: 'money' },
+  monthly: { label: 'Monthly', kind: 'money' },
+  min_stay: { label: 'Min. stay', kind: 'nights' },
+  tax_rate: { label: 'Tax', kind: 'percent' },
+  caution_deposit: { label: 'Caution deposit', kind: 'money' },
+};
+
+function rateOf(apt: Apartment): RoomRate {
+  return {
+    apartmentId: apt.id,
+    nightly: apt.nightly,
+    weekend: apt.weekend,
+    weekly: apt.weekly,
+    monthly: apt.monthly,
+    minStay: apt.minStay,
+  };
+}
+
+function fmtValue(v: number | null, kind: ValueKind): string {
+  if (v === null) return '—';
+  if (kind === 'money') return fmt(v);
+  if (kind === 'percent') return `${Number(v)}%`;
+  return `${v} night${v === 1 ? '' : 's'}`;
+}
+
+function fmtWhen(iso: string): string {
+  return new Date(iso).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+const RATE_COLS = '1.2fr repeat(5, 1fr) 0.9fr';
+
 function RatesTab() {
+  const apartments = useApartments();
+  const { rates, pricing, rateHistory } = useStore();
+  const [editing, setEditing] = useState<number | null>(null);
+  const live = rates.length > 0 && pricing !== null;
+
   return (
     <>
       <h1 style={h1}>Rates &amp; Pricing</h1>
-      <p style={{ fontSize: 13, color: c.gold, margin: '0 0 24px', fontWeight: 600 }}>
-        Rates shown are the current official rate card.
+      <p style={subtitle}>
+        Changes take effect on the website straight away and apply to new bookings only; existing bookings keep the
+        price they were booked at. Every change is logged below.
       </p>
-      <div style={tableWrap}>
-        <div style={headRow('1.4fr 1fr 1fr 1fr 1fr 1fr')}>
+      {!live && (
+        <p style={{ fontSize: 13, color: c.danger, margin: '0 0 16px' }}>
+          Live rates have not loaded, so editing is unavailable. Showing the values from the code.
+        </p>
+      )}
+      <PricingSettingsPanel />
+      <h3 style={sectionH3}>Room rates</h3>
+      <div style={{ ...tableWrap, marginBottom: 32 }}>
+        <div style={{ ...headRow(RATE_COLS), minWidth: 760 }}>
           <span>Apartment</span>
-          <span>Nightly</span>
-          <span>Weekend</span>
-          <span>Weekly</span>
-          <span>Cleaning Fee</span>
-          <span>Deposit</span>
+          {RATE_FIELDS.map((f) => (
+            <span key={f.key}>{f.label}</span>
+          ))}
+          <span />
         </div>
-        {APARTMENTS.map((apt) => (
-          <div key={apt.id} style={bodyRow('1.4fr 1fr 1fr 1fr 1fr 1fr')}>
-            <span style={{ fontWeight: 600, color: c.navy }}>{apt.name}</span>
-            <span>{fmt(apt.nightly)}</span>
-            <span>{fmt(apt.weekend)}</span>
-            <span>{fmt(apt.weekly)}</span>
-            <span>{fmt(apt.cleaning)}</span>
-            <span>{fmt(apt.deposit)}</span>
+        {apartments.map((apt) =>
+          editing === apt.id ? (
+            <RateEditor key={apt.id} apt={apt} onDone={() => setEditing(null)} />
+          ) : (
+            <div key={apt.id} style={{ ...bodyRow(RATE_COLS), minWidth: 760 }}>
+              <span style={{ fontWeight: 600, color: c.navy }}>{apt.name}</span>
+              {RATE_FIELDS.map((f) => (
+                <span key={f.key}>{fmtValue(apt[f.key], f.kind)}</span>
+              ))}
+              <span>
+                <button
+                  onClick={() => setEditing(apt.id)}
+                  disabled={!live || editing !== null}
+                  style={{ ...smallBtn(c.cream, c.navy), opacity: !live || editing !== null ? 0.5 : 1 }}
+                >
+                  Edit
+                </button>
+              </span>
+            </div>
+          ),
+        )}
+      </div>
+
+      <RateHistory history={rateHistory} />
+    </>
+  );
+}
+
+function RateEditor({ apt, onDone }: { apt: Apartment; onDone: () => void }) {
+  const original = rateOf(apt);
+  const [draft, setDraft] = useState<Record<RateKey, string>>({
+    nightly: String(original.nightly),
+    weekend: String(original.weekend),
+    weekly: String(original.weekly),
+    monthly: String(original.monthly),
+    minStay: String(original.minStay),
+  });
+  const [note, setNote] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    const next: RoomRate = { ...original };
+    for (const f of RATE_FIELDS) {
+      const n = Number(draft[f.key]);
+      const min = f.key === 'nightly' || f.key === 'weekend' || f.key === 'minStay' ? 1 : 0;
+      if (draft[f.key].trim() === '' || !Number.isInteger(n) || n < min) {
+        setError(`${f.label} must be a whole number${min ? ' above zero' : ''}.`);
+        return;
+      }
+      next[f.key] = n;
+    }
+    const changed = RATE_FIELDS.filter((f) => next[f.key] !== original[f.key]);
+    if (changed.length === 0) {
+      onDone();
+      return;
+    }
+    const summary = changed
+      .map((f) => `${f.label}: ${fmtValue(original[f.key], f.kind)} → ${fmtValue(next[f.key], f.kind)}`)
+      .join('\n');
+    if (!window.confirm(`Change ${apt.name}'s rates? New bookings on the website will use them immediately.\n\n${summary}`)) {
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await setRoomRates(next, note);
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save the rates.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={(e) => void save(e)} style={{ padding: '14px 16px', background: c.cream, minWidth: 760 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: RATE_COLS, gap: 10, alignItems: 'end' }}>
+        <span style={{ fontWeight: 600, color: c.navy, fontSize: 13.5, paddingBottom: 9 }}>{apt.name}</span>
+        {RATE_FIELDS.map((f) => (
+          <div key={f.key} style={{ display: 'flex', flexDirection: 'column' }}>
+            <label style={label} htmlFor={`rate-${apt.id}-${f.key}`}>
+              {f.label}
+              {f.kind === 'money' ? ' (₦)' : ' (nights)'}
+            </label>
+            <input
+              id={`rate-${apt.id}-${f.key}`}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
+              value={draft[f.key]}
+              onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+              style={{ ...field, padding: 7, fontSize: 13 }}
+            />
+          </div>
+        ))}
+        <span />
+      </div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'end', marginTop: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column' }}>
+          <label style={label} htmlFor={`rate-${apt.id}-note`}>Reason for change (optional, kept in the log)</label>
+          <input
+            id={`rate-${apt.id}-note`}
+            value={note}
+            maxLength={500}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="e.g. December peak season"
+            style={{ ...field, padding: 7, fontSize: 13 }}
+          />
+        </div>
+        <button type="submit" disabled={saving} style={{ ...btnPrimary, padding: '9px 18px', fontSize: 13, opacity: saving ? 0.7 : 1 }}>
+          {saving ? 'Saving…' : 'Save rates'}
+        </button>
+        <button type="button" onClick={onDone} disabled={saving} style={{ ...btnGhost, padding: '9px 18px', fontSize: 13 }}>
+          Cancel
+        </button>
+      </div>
+      {error && <p style={{ color: c.danger, fontSize: 12.5, margin: '10px 0 0' }}>{error}</p>}
+    </form>
+  );
+}
+
+function RateHistory({ history }: { history: RateChange[] }) {
+  // 'all', 'global' (tax and deposit), or a room id.
+  const [room, setRoom] = useState<'all' | 'global' | number>('all');
+  const rows =
+    room === 'all'
+      ? history
+      : history.filter((h) => (room === 'global' ? h.apartmentId === null : h.apartmentId === room));
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+        <h3 style={{ ...sectionH3, margin: 0 }}>Change history</h3>
+        <select
+          aria-label="Filter by room"
+          value={String(room)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setRoom(v === 'all' || v === 'global' ? v : Number(v));
+          }}
+          style={{ ...field, width: 180, padding: 6, fontSize: 13 }}
+        >
+          <option value="all">All changes</option>
+          <option value="global">Tax &amp; deposit</option>
+          {APARTMENTS.map((a) => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+      </div>
+      <div style={tableWrap}>
+        <div style={{ ...headRow('1fr 0.8fr 2fr 1.2fr'), minWidth: 760 }}>
+          <span>When</span>
+          <span>Applies to</span>
+          <span>Change</span>
+          <span>By</span>
+        </div>
+        {rows.length === 0 && <p style={emptyNote}>No rate changes logged.</p>}
+        {rows.map((h) => (
+          <div key={h.id} style={{ ...bodyRow('1fr 0.8fr 2fr 1.2fr'), minWidth: 760 }}>
+            <span>{fmtWhen(h.changedAt)}</span>
+            <span style={{ fontWeight: 600, color: c.navy }}>
+              {h.apartmentId === null ? 'All bookings' : aptName(h.apartmentId)}
+            </span>
+            <span>
+              {Object.entries(h.changes).map(([k, v]) => {
+                const meta = LOGGED_FIELD[k] ?? { label: k, kind: 'money' as const };
+                return (
+                  <span key={k} style={{ display: 'block' }}>
+                    {meta.label}:{' '}
+                    {v.from === null ? (
+                      <strong>{fmtValue(v.to, meta.kind)}</strong>
+                    ) : (
+                      <>
+                        {fmtValue(v.from, meta.kind)} → <strong>{fmtValue(v.to, meta.kind)}</strong>
+                      </>
+                    )}
+                  </span>
+                );
+              })}
+              {h.note && (
+                <span style={{ display: 'block', fontSize: 11.5, color: c.faint, fontStyle: 'italic', marginTop: 2 }}>{h.note}</span>
+              )}
+            </span>
+            <span>{h.changedBy}</span>
           </div>
         ))}
       </div>
     </>
+  );
+}
+
+/** Tax rate and caution deposit, which apply to every booking. */
+function PricingSettingsPanel() {
+  const { pricing: live } = useStore();
+  const current = usePricing();
+  const [editing, setEditing] = useState(false);
+  const [tax, setTax] = useState('');
+  const [deposit, setDeposit] = useState('');
+  const [note, setNote] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const startEdit = () => {
+    setTax(String(current.taxRate));
+    setDeposit(String(current.cautionDeposit));
+    setNote('');
+    setError(null);
+    setEditing(true);
+  };
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    const taxRate = Number(tax);
+    const cautionDeposit = Number(deposit);
+    if (tax.trim() === '' || !Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100 || Math.abs(Math.round(taxRate * 100) - taxRate * 100) > 1e-9) {
+      setError('Tax must be a percentage between 0 and 100, with at most two decimal places.');
+      return;
+    }
+    if (deposit.trim() === '' || !Number.isInteger(cautionDeposit) || cautionDeposit < 0) {
+      setError('The deposit must be a whole number of naira, zero or more.');
+      return;
+    }
+    const next: PricingSettings = { taxRate, cautionDeposit };
+    const lines = [
+      taxRate !== current.taxRate && `Tax: ${fmtValue(current.taxRate, 'percent')} → ${fmtValue(taxRate, 'percent')}`,
+      cautionDeposit !== current.cautionDeposit &&
+        `Caution deposit: ${fmt(current.cautionDeposit)} → ${fmt(cautionDeposit)}`,
+    ].filter(Boolean);
+    if (lines.length === 0) {
+      setEditing(false);
+      return;
+    }
+    if (!window.confirm(`Change the charges on every new booking? The website uses them immediately.\n\n${lines.join('\n')}`)) {
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await setPricingSettings(next, note);
+      setEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const col: CSSProperties = { display: 'flex', flexDirection: 'column' };
+
+  return (
+    <div style={{ ...panel, padding: 20, marginBottom: 32 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h3 style={{ ...sectionH3, margin: '0 0 4px' }}>Tax &amp; caution deposit</h3>
+          <p style={{ fontSize: 12.5, color: c.faint, margin: 0 }}>
+            Added to every booking at payment. Tax is charged on the room subtotal; the deposit is charged once per
+            booking and refunded 24–48 hours after checkout if there is no damage.
+          </p>
+        </div>
+        {!editing && (
+          <button
+            onClick={startEdit}
+            disabled={!live}
+            style={{ ...smallBtn(c.cream, c.navy), opacity: live ? 1 : 0.5 }}
+          >
+            Edit
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <div style={{ display: 'flex', gap: 32, marginTop: 14, fontSize: 13.5, color: c.body, flexWrap: 'wrap' }}>
+          <span>
+            Tax <strong style={{ color: c.navy }}>{fmtValue(current.taxRate, 'percent')}</strong>
+          </span>
+          <span>
+            Caution deposit <strong style={{ color: c.navy }}>{fmt(current.cautionDeposit)}</strong>
+          </span>
+          {live?.updatedAt && (
+            <span style={{ color: c.faint, fontSize: 12.5 }}>
+              Last changed {fmtWhen(live.updatedAt)} by {live.updatedBy}
+            </span>
+          )}
+        </div>
+      ) : (
+        <form onSubmit={(e) => void save(e)} style={{ marginTop: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12 }}>
+            <div style={col}>
+              <label style={label} htmlFor="ps-tax">Tax (%)</label>
+              <input
+                id="ps-tax"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                max={100}
+                step={0.01}
+                value={tax}
+                onChange={(e) => setTax(e.target.value)}
+                style={{ ...field, padding: 7, fontSize: 13 }}
+              />
+            </div>
+            <div style={col}>
+              <label style={label} htmlFor="ps-deposit">Caution deposit (₦)</label>
+              <input
+                id="ps-deposit"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={deposit}
+                onChange={(e) => setDeposit(e.target.value)}
+                style={{ ...field, padding: 7, fontSize: 13 }}
+              />
+            </div>
+            <div style={{ ...col, gridColumn: '1 / -1' }}>
+              <label style={label} htmlFor="ps-note">Reason for change (optional, kept in the log)</label>
+              <input
+                id="ps-note"
+                value={note}
+                maxLength={500}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g. VAT rate change"
+                style={{ ...field, padding: 7, fontSize: 13 }}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+            <button type="submit" disabled={saving} style={{ ...btnPrimary, padding: '9px 18px', fontSize: 13, opacity: saving ? 0.7 : 1 }}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+            <button type="button" onClick={() => setEditing(false)} disabled={saving} style={{ ...btnGhost, padding: '9px 18px', fontSize: 13 }}>
+              Cancel
+            </button>
+          </div>
+          {error && <p style={{ color: c.danger, fontSize: 12.5, margin: '10px 0 0' }}>{error}</p>}
+        </form>
+      )}
+    </div>
   );
 }

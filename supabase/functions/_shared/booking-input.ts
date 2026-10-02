@@ -1,12 +1,13 @@
-import type { Apartment, GuestDetails, PaymentMethod, PriceBreakdown } from './types.ts';
+import type { Apartment, GuestDetails, PaymentMethod, PriceBreakdown, PricingSettings } from './types.ts';
 import { findApartment } from './apartments.ts';
 import { daysBetween, isIsoDate } from './dates.ts';
-import { priceBreakdown } from './pricing.ts';
-import { fitsCapacity, guestError, stayError } from './validation.ts';
+import { MIN_ROOMS, priceBreakdown } from './pricing.ts';
+import { fitsCapacity, guestError, roomCapacity, stayError } from './validation.ts';
 
 /** What the website sends to create a booking. Money is never part of it: the server prices the stay. */
 export interface BookingInput {
-  apartmentId: number;
+  /** At least MIN_ROOMS distinct rooms, all for the same dates. */
+  apartmentIds: number[];
   checkIn: string;
   checkOut: string;
   adults: number;
@@ -37,21 +38,33 @@ function int(v: unknown): number | null {
 }
 
 export type ParsedBooking =
-  | { ok: true; input: BookingInput; apartment: Apartment; price: Extract<PriceBreakdown, { valid: true }> }
+  | { ok: true; input: BookingInput; apartments: Apartment[]; price: Extract<PriceBreakdown, { valid: true }> }
   | { ok: false; status: 400 | 422; error: string; field?: 'stay' | 'apartment' | 'guest' | 'payment' };
 
 /**
  * Turns an untrusted request body into a booking we are willing to store,
  * running the same rules the website runs before it lets a guest reach step 4.
+ * `rooms` and `pricing` carry the live rates, tax and deposit, so the stay is
+ * priced at today's rate card.
  * Availability is checked separately, against the database.
  */
-export function parseBookingInput(raw: unknown, today: string): ParsedBooking {
+export function parseBookingInput(
+  raw: unknown,
+  today: string,
+  rooms: Apartment[],
+  pricing: PricingSettings,
+): ParsedBooking {
   if (!raw || typeof raw !== 'object') return { ok: false, status: 400, error: 'Expected a JSON body.' };
   const body = raw as Record<string, unknown>;
 
-  const apartmentId = int(body.apartmentId);
-  const apartment = apartmentId === null ? undefined : findApartment(apartmentId);
-  if (!apartment) return { ok: false, status: 422, error: 'Unknown apartment.', field: 'apartment' };
+  const rawIds = Array.isArray(body.apartmentIds) ? body.apartmentIds : [];
+  const ids = [...new Set(rawIds.map(int))];
+  const picked = ids.map((id) => (id === null ? undefined : findApartment(id, rooms)));
+  if (picked.some((a) => !a)) return { ok: false, status: 422, error: 'Unknown apartment.', field: 'apartment' };
+  const chosen = picked as Apartment[];
+  if (chosen.length < MIN_ROOMS) {
+    return { ok: false, status: 422, error: `Please choose at least ${MIN_ROOMS} rooms.`, field: 'apartment' };
+  }
 
   const checkIn = isIsoDate(body.checkIn) ? body.checkIn : '';
   const checkOut = isIsoDate(body.checkOut) ? body.checkOut : '';
@@ -60,23 +73,22 @@ export function parseBookingInput(raw: unknown, today: string): ParsedBooking {
 
   const adults = int(body.adults) ?? 1;
   const children = int(body.children) ?? 0;
-  if (adults < 1 || children < 0 || !fitsCapacity(apartment, adults, children)) {
+  if (adults < 1 || children < 0 || !fitsCapacity(chosen, adults, children)) {
     return {
       ok: false,
       status: 422,
-      error: `${apartment.name} sleeps up to ${apartment.maxGuests} guests.`,
+      error: `The rooms you chose sleep up to ${roomCapacity(chosen)} guests. Add another room.`,
       field: 'apartment',
     };
   }
 
-  const price = priceBreakdown(apartment, checkIn, checkOut);
+  const price = priceBreakdown(chosen, checkIn, checkOut, pricing);
   if (!price.valid) {
+    const minStay = Math.max(...chosen.map((a) => a.minStay));
     return {
       ok: false,
       status: 422,
-      error: price.tooShort
-        ? `${apartment.name} has a ${apartment.minStay}-night minimum stay.`
-        : 'Those dates cannot be priced.',
+      error: price.tooShort ? `These rooms have a ${minStay}-night minimum stay.` : 'Those dates cannot be priced.',
       field: 'stay',
     };
   }
@@ -109,10 +121,10 @@ export function parseBookingInput(raw: unknown, today: string): ParsedBooking {
 
   return {
     ok: true,
-    apartment,
+    apartments: chosen,
     price,
     input: {
-      apartmentId: apartment.id,
+      apartmentIds: chosen.map((a) => a.id),
       checkIn,
       checkOut,
       adults,

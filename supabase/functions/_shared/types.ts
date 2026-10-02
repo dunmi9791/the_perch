@@ -23,11 +23,44 @@ export interface Apartment {
   weekend: number;
   weekly: number;
   monthly: number;
-  cleaning: number;
-  deposit: number;
   minStay: number;
   checkinTime: string;
   checkoutTime: string;
+}
+
+/** The editable part of a room's listing, as stored in `room_rates`. Naira. */
+export interface RoomRate {
+  apartmentId: number;
+  nightly: number;
+  weekend: number;
+  weekly: number;
+  monthly: number;
+  minStay: number;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+/** Charges added to every booking, as stored in `pricing_settings`. */
+export interface PricingSettings {
+  /** Percent of the room subtotal, e.g. 7.5. */
+  taxRate: number;
+  /** Refundable caution deposit in naira, once per booking. */
+  cautionDeposit: number;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export type LoggedRateField = 'nightly' | 'weekend' | 'weekly' | 'monthly' | 'min_stay' | 'tax_rate' | 'caution_deposit';
+
+/** One logged change to a room's rates or to the booking-wide charges. Only the fields that changed are present. */
+export interface RateChange {
+  id: number;
+  /** Null for a change to tax or deposit, which apply to every booking. */
+  apartmentId: number | null;
+  changes: Partial<Record<LoggedRateField, { from: number | null; to: number }>>;
+  note: string;
+  changedBy: string;
+  changedAt: string;
 }
 
 /** Result of pricing a stay. `valid` gates every money field below it. */
@@ -37,18 +70,19 @@ export type PriceBreakdown =
       valid: true;
       tooShort: false;
       nights: number;
-      standardNights: number;
-      weekendNights: number;
-      hasWeekend: boolean;
-      standardTotal: number;
-      weekendTotal: number;
-      /** Nightly charges only, before cleaning and deposit. */
-      stayOnlyTotal: number;
-      cleaning: number;
+      /** Nightly charges for each room, before tax. */
+      lines: { apartment: Apartment; total: number }[];
+      /** All rooms' nightly charges, before tax. */
+      subtotal: number;
+      /** Percent applied to the subtotal. */
+      taxRate: number;
+      /** Tax on the subtotal. */
+      tax: number;
+      /** Refundable caution deposit, charged at payment and returned after checkout. */
       deposit: number;
-      /** Stay plus cleaning: what is paid before arrival. The deposit is collected at check-in. */
+      /** What is paid at booking: subtotal, tax and deposit. */
       dueOnline: number;
-      /** Everything, deposit included. */
+      /** Everything, deposit included. Equal to dueOnline. */
       total: number;
     };
 
@@ -71,7 +105,8 @@ export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refunded';
 /** A reservation as stored in the database — website submissions and offline entries alike. */
 export interface BookingRecord {
   ref: string;
-  apartmentId: number;
+  /** Every room the booking holds, for the same dates. */
+  apartmentIds: number[];
   checkIn: string;
   checkOut: string;
   adults: number;
@@ -80,11 +115,11 @@ export interface BookingRecord {
   guestEmail: string;
   guestPhone: string;
   payment: PaymentMethod | 'cash' | 'other';
-  /** Stay total including fees and deposit, in naira. */
+  /** Everything the guest pays, in naira: rooms, tax and caution deposit. */
   total: number;
-  /** Refundable deposit in naira, collected at check-in. Part of `total`. */
+  /** Refundable caution deposit in naira. Part of `total`. */
   deposit: number;
-  /** Naira due before arrival (total minus deposit). What Paystack charges. */
+  /** Naira due at payment. What Paystack charges. */
   amountDue: number;
   status: BookingStatus;
   source: BookingSource;

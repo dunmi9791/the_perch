@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Apartment, AvailabilityState, Screen } from '../types';
-import { APARTMENTS } from '../data/apartments';
+import { useApartments } from '../data/apartments';
 import { LANDMARKS, WHY_STAY } from '../data/content';
 import { bedroomsLabel, fmt } from '../lib/format';
 import { amenityChip, c, CONTACT, eyebrow, field, label, sectionTitle, serif } from '../theme';
@@ -23,6 +23,7 @@ const GALLERY_PREVIEW = [
 ];
 
 export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Props) {
+  const apartments = useApartments();
   const [addressCopied, setAddressCopied] = useState(false);
 
   const copyAddress = () => {
@@ -206,7 +207,7 @@ export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Prop
             <h2 style={sectionTitle}>Find your perch</h2>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, justifyContent: 'center' }}>
-            {APARTMENTS.map((apt) => (
+            {apartments.map((apt) => (
               <ApartmentCard
                 key={apt.id}
                 apt={apt}

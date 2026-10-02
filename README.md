@@ -115,19 +115,37 @@ back/forward and deep links work without pulling in a router.
 
 `supabase/functions/_shared/pricing.ts` is the single source of truth, and it
 runs in two places: the site uses it to show the guest a total, and the
-`create-booking` function uses it to decide what is actually stored. A stay is
-priced per night, with Friday and Saturday nights billed at the weekend rate,
-plus a cleaning fee and a refundable deposit. Stays shorter than an apartment's
-minimum are rejected rather than priced.
+`create-booking` function uses it to decide what is actually stored.
 
-Two amounts come out of it. `dueOnline` (stay plus cleaning) is what the guest
-pays before arrival, by Paystack or bank transfer; the deposit is collected at
-check-in and returned after checkout. `total` includes the deposit and is what
-the admin dashboard reports.
+A website booking takes at least two rooms (`MIN_ROOMS`), all for the same
+dates. Each room is priced per night, with Friday and Saturday nights billed at
+the weekend rate. On top of the room subtotal come tax (7.5% at launch) and a
+refundable caution deposit (₦100,000 at launch), charged once per booking. There is no cleaning fee. Stays shorter than a room's minimum are
+rejected rather than priced.
 
-Rates in `supabase/functions/_shared/apartments.ts` are the official rate card:
-₦70,000 a night for Robin, Weaver, Sunbird and Hornbill, ₦90,000 for Kingfisher
-and Turaco. Weekend and weekday rates are the same.
+Everything is due at payment: `dueOnline` and `total` are the same figure, and
+it is what Paystack charges or what a bank transfer should cover. The deposit is
+refunded 24–48 hours after checkout, provided no damage was done to the
+property. Staff can record a single-room booking from the admin screen; the
+two-room minimum applies to the website.
+
+The rooms a booking holds live in `booking_rooms`, one row per room. The
+database's exclusion constraint on that table is what stops two live bookings
+holding the same room on the same night.
+
+Room rates (nightly, weekend, weekly, monthly and minimum stay) live in the
+`room_rates` table, and the tax rate and caution deposit live in the single-row
+`pricing_settings` table. Staff edit both under Admin → Rates & Pricing. The
+website reads them on load, and `create-booking` reads them on every booking,
+so a change applies to the next booking. Existing bookings keep the amount they
+were priced at. Rates can only be changed through the `set_room_rates()` and
+`set_pricing_settings()` database functions, which record each change in
+`rate_history`: which fields changed, from what to what, who made the change,
+when, and an optional reason. Nothing can edit or delete that log from the app.
+
+The rates in `supabase/functions/_shared/apartments.ts` and `DEFAULT_PRICING`
+in `pricing.ts` are the launch values. The site shows them only until the live
+values load; the server never prices from them.
 
 ## Paying with Paystack
 

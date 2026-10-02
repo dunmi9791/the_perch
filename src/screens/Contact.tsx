@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FAQS } from '../data/content';
+import { faqs } from '../data/content';
+import { usePricing } from '../data/apartments';
 import { c, CONTACT, eyebrow, field, pageTitle } from '../theme';
 import { ImageSlot } from '../components/ImageSlot';
 import { ClockIcon, PhoneIcon, PinIcon, WhatsAppIcon } from '../components/Icons';
@@ -8,6 +9,7 @@ export function Contact() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [sent, setSent] = useState(false);
   const [openFaq, setOpenFaq] = useState<Record<number, boolean>>({});
+  const pricing = usePricing();
 
   const set = (patch: Partial<typeof form>) => {
     setForm((f) => ({ ...f, ...patch }));
@@ -115,7 +117,7 @@ export function Contact() {
               Frequently Asked Questions
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {FAQS.map((faq, i) => {
+              {faqs(pricing).map((faq, i) => {
                 const open = Boolean(openFaq[i]);
                 return (
                   <div

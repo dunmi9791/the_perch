@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { RealtimeChannel, Session } from '@supabase/supabase-js';
-import type { BookingRecord, DateBlock, StayHold } from '../types';
+import type { BookingRecord, DateBlock, PricingSettings, RateChange, RoomRate, StayHold } from '../types';
 import { supabase } from './supabase';
 
 /**
@@ -16,8 +16,14 @@ export interface StoreData {
   /** Nights taken by live bookings. Safe for anonymous visitors. */
   holds: StayHold[];
   blocks: DateBlock[];
+  /** Live rate card. Empty until loaded; the room list falls back to the code's rates meanwhile. */
+  rates: RoomRate[];
+  /** Live tax rate and caution deposit; null until loaded. */
+  pricing: PricingSettings | null;
   /** Full records; empty unless the current user is an admin. */
   bookings: BookingRecord[];
+  /** Every logged change to rates, tax or deposit, newest first; empty unless the current user is an admin. */
+  rateHistory: RateChange[];
   /** False until the first fetch has finished. */
   ready: boolean;
   error: string | null;
@@ -30,7 +36,7 @@ export interface AuthState {
   checked: boolean;
 }
 
-const EMPTY: StoreData = { holds: [], blocks: [], bookings: [], ready: false, error: null };
+const EMPTY: StoreData = { holds: [], blocks: [], rates: [], pricing: null, bookings: [], rateHistory: [], ready: false, error: null };
 const NO_AUTH: AuthState = { session: null, isAdmin: false, checked: false };
 
 let data: StoreData = EMPTY;
@@ -72,7 +78,7 @@ export function useAuth(): AuthState {
 
 interface BookingRow {
   ref: string;
-  apartment_id: number;
+  booking_rooms: { apartment_id: number }[];
   check_in: string;
   check_out: string;
   adults: number;
@@ -104,6 +110,33 @@ interface BlockRow {
   reason: string;
 }
 
+interface RateRow {
+  apartment_id: number;
+  nightly: number;
+  weekend: number;
+  weekly: number;
+  monthly: number;
+  min_stay: number;
+  updated_at: string;
+  updated_by: string;
+}
+
+interface PricingRow {
+  tax_rate: number | string;
+  caution_deposit: number;
+  updated_at: string;
+  updated_by: string;
+}
+
+interface RateHistoryRow {
+  id: number;
+  apartment_id: number | null;
+  changes: RateChange['changes'];
+  note: string;
+  changed_by: string;
+  changed_at: string;
+}
+
 interface OccupancyRow {
   id: string;
   kind: 'booking' | 'block';
@@ -114,12 +147,12 @@ interface OccupancyRow {
 }
 
 const BOOKING_COLUMNS =
-  'ref, apartment_id, check_in, check_out, adults, children, guest_name, guest_email, guest_phone, payment, total, deposit, amount_due, status, source, note, created_at, payment_status, payment_ref, payment_channel, paid_amount, paid_at, hold_expires_at';
+  'ref, booking_rooms(apartment_id), check_in, check_out, adults, children, guest_name, guest_email, guest_phone, payment, total, deposit, amount_due, status, source, note, created_at, payment_status, payment_ref, payment_channel, paid_amount, paid_at, hold_expires_at';
 
 function toRecord(r: BookingRow): BookingRecord {
   return {
     ref: r.ref,
-    apartmentId: r.apartment_id,
+    apartmentIds: r.booking_rooms.map((x) => x.apartment_id).sort((a, b) => a - b),
     checkIn: r.check_in,
     checkOut: r.check_out,
     adults: r.adults,
@@ -144,18 +177,63 @@ function toRecord(r: BookingRow): BookingRecord {
   };
 }
 
+function toRate(r: RateRow): RoomRate {
+  return {
+    apartmentId: r.apartment_id,
+    nightly: r.nightly,
+    weekend: r.weekend,
+    weekly: r.weekly,
+    monthly: r.monthly,
+    minStay: r.min_stay,
+    updatedAt: r.updated_at,
+    updatedBy: r.updated_by,
+  };
+}
+
+function toRateChange(r: RateHistoryRow): RateChange {
+  return {
+    id: r.id,
+    apartmentId: r.apartment_id,
+    changes: r.changes,
+    note: r.note,
+    changedBy: r.changed_by,
+    changedAt: r.changed_at,
+  };
+}
+
 function toBlock(r: BlockRow): DateBlock {
   return { id: r.id, apartmentId: r.apartment_id, start: r.start_date, end: r.end_date, reason: r.reason };
 }
 
 /* ---------- reads ---------- */
 
-async function fetchOccupancy(): Promise<Pick<StoreData, 'holds' | 'blocks'>> {
-  const { data: rows, error } = await supabase
-    .from('occupancy')
-    .select('id, kind, apartment_id, start_date, end_date, status')
-    .returns<OccupancyRow[]>();
-  if (error) throw error;
+async function fetchPublic(): Promise<Pick<StoreData, 'holds' | 'blocks' | 'rates' | 'pricing'>> {
+  const [occRes, ratesRes, pricingRes] = await Promise.all([
+    supabase.from('occupancy').select('id, kind, apartment_id, start_date, end_date, status').returns<OccupancyRow[]>(),
+    supabase
+      .from('room_rates')
+      .select('apartment_id, nightly, weekend, weekly, monthly, min_stay, updated_at, updated_by')
+      .returns<RateRow[]>(),
+    supabase
+      .from('pricing_settings')
+      .select('tax_rate, caution_deposit, updated_at, updated_by')
+      .returns<PricingRow[]>()
+      .maybeSingle(),
+  ]);
+  if (occRes.error) throw occRes.error;
+  if (ratesRes.error) throw ratesRes.error;
+  if (pricingRes.error) throw pricingRes.error;
+  const p = pricingRes.data;
+  const pricing: PricingSettings | null = p
+    ? {
+        // Postgres numeric may arrive as a string.
+        taxRate: Number(p.tax_rate),
+        cautionDeposit: p.caution_deposit,
+        updatedAt: p.updated_at,
+        updatedBy: p.updated_by,
+      }
+    : null;
+  const rows = occRes.data;
   const holds: StayHold[] = [];
   const blocks: DateBlock[] = [];
   for (const r of rows) {
@@ -165,17 +243,28 @@ async function fetchOccupancy(): Promise<Pick<StoreData, 'holds' | 'blocks'>> {
       blocks.push({ id: r.id, apartmentId: r.apartment_id, start: r.start_date, end: r.end_date, reason: '' });
     }
   }
-  return { holds, blocks };
+  return { holds, blocks, rates: ratesRes.data.map(toRate), pricing };
 }
 
-async function fetchAdminData(): Promise<Pick<StoreData, 'bookings' | 'blocks'>> {
-  const [bookingsRes, blocksRes] = await Promise.all([
+async function fetchAdminData(): Promise<Pick<StoreData, 'bookings' | 'blocks' | 'rateHistory'>> {
+  const [bookingsRes, blocksRes, historyRes] = await Promise.all([
     supabase.from('bookings').select(BOOKING_COLUMNS).order('created_at', { ascending: false }).returns<BookingRow[]>(),
     supabase.from('date_blocks').select('id, apartment_id, start_date, end_date, reason').order('start_date', { ascending: false }).returns<BlockRow[]>(),
+    supabase
+      .from('rate_history')
+      .select('id, apartment_id, changes, note, changed_by, changed_at')
+      .order('changed_at', { ascending: false })
+      .order('id', { ascending: false })
+      .returns<RateHistoryRow[]>(),
   ]);
   if (bookingsRes.error) throw bookingsRes.error;
   if (blocksRes.error) throw blocksRes.error;
-  return { bookings: bookingsRes.data.map(toRecord), blocks: blocksRes.data.map(toBlock) };
+  if (historyRes.error) throw historyRes.error;
+  return {
+    bookings: bookingsRes.data.map(toRecord),
+    blocks: blocksRes.data.map(toBlock),
+    rateHistory: historyRes.data.map(toRateChange),
+  };
 }
 
 let refreshing: Promise<void> | null = null;
@@ -185,8 +274,10 @@ export function refreshStore(): Promise<void> {
   if (refreshing) return refreshing;
   refreshing = (async () => {
     try {
-      const pub = await fetchOccupancy();
-      const admin = auth.isAdmin ? await fetchAdminData() : { bookings: [] as BookingRecord[] };
+      const pub = await fetchPublic();
+      const admin = auth.isAdmin
+        ? await fetchAdminData()
+        : { bookings: [] as BookingRecord[], rateHistory: [] as RateChange[] };
       setData({ ...pub, ...admin, ready: true, error: null });
     } catch (e) {
       setData({ ready: true, error: e instanceof Error ? e.message : 'Could not load bookings.' });
@@ -217,6 +308,8 @@ function startLiveUpdates() {
     .channel('admin-store')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => void refreshStore())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'date_blocks' }, () => void refreshStore())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'room_rates' }, () => void refreshStore())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pricing_settings' }, () => void refreshStore())
     .subscribe();
 }
 
@@ -250,17 +343,16 @@ export type NewBooking = Omit<BookingRecord, 'ref' | 'createdAt' | 'paymentStatu
 };
 
 function friendly(error: { code?: string; message: string }): Error {
-  if (error.code === '23P01') return new Error('Those dates are already held for this room.');
+  if (error.code === '23P01') return new Error('Those dates are already held for one of these rooms.');
+  if (error.message === 'dates_blocked') return new Error('One of these rooms is blocked for some of those nights.');
   if (error.code === '42501') return new Error('You are not allowed to do that. Sign in as an admin.');
   return new Error(error.message);
 }
 
-/** Records an offline booking. The database assigns the reference. */
-export async function addBooking(b: NewBooking): Promise<BookingRecord> {
-  const { data: row, error } = await supabase
-    .from('bookings')
-    .insert({
-      apartment_id: b.apartmentId,
+/** Records an offline booking and its rooms in one transaction. The database assigns the reference. */
+export async function addBooking(b: NewBooking): Promise<string> {
+  const { data: ref, error } = await supabase.rpc('create_booking', {
+    p_booking: {
       check_in: b.checkIn,
       check_out: b.checkOut,
       adults: b.adults,
@@ -276,13 +368,12 @@ export async function addBooking(b: NewBooking): Promise<BookingRecord> {
       source: b.source,
       note: b.note,
       payment_status: b.paymentStatus ?? 'unpaid',
-    })
-    .select(BOOKING_COLUMNS)
-    .returns<BookingRow[]>()
-    .single();
+    },
+    p_rooms: b.apartmentIds,
+  });
   if (error) throw friendly(error);
   await refreshStore();
-  return toRecord(row);
+  return ref as string;
 }
 
 export async function updateBooking(ref: string, patch: Partial<Pick<BookingRecord, 'status' | 'note'>>): Promise<void> {
@@ -295,6 +386,34 @@ export async function removeBooking(ref: string): Promise<void> {
   const { error } = await supabase.from('bookings').delete().eq('ref', ref);
   if (error) throw friendly(error);
   await refreshStore();
+}
+
+/** Changes one room's rates. The database logs what changed, who changed it and the note. */
+export async function setRoomRates(rate: RoomRate, note: string): Promise<number> {
+  const { data: changed, error } = await supabase.rpc('set_room_rates', {
+    p_apartment_id: rate.apartmentId,
+    p_nightly: rate.nightly,
+    p_weekend: rate.weekend,
+    p_weekly: rate.weekly,
+    p_monthly: rate.monthly,
+    p_min_stay: rate.minStay,
+    p_note: note,
+  });
+  if (error) throw friendly(error);
+  await refreshStore();
+  return changed as number;
+}
+
+/** Changes the tax rate and caution deposit. The database logs what changed, who changed it and the note. */
+export async function setPricingSettings(settings: PricingSettings, note: string): Promise<number> {
+  const { data: changed, error } = await supabase.rpc('set_pricing_settings', {
+    p_tax_rate: settings.taxRate,
+    p_caution_deposit: settings.cautionDeposit,
+    p_note: note,
+  });
+  if (error) throw friendly(error);
+  await refreshStore();
+  return changed as number;
 }
 
 export async function addBlock(block: Omit<DateBlock, 'id'>): Promise<void> {

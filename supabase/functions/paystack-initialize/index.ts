@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   const supabase = serviceClient();
   const { data: b, error } = await supabase
     .from('bookings')
-    .select('ref, guest_email, guest_name, apartment_id, check_in, check_out, payment, status, payment_status, amount_due, hold_expires_at')
+    .select('ref, guest_email, guest_name, check_in, check_out, payment, status, payment_status, amount_due, hold_expires_at, booking_rooms(apartment_id)')
     .eq('ref', ref)
     .maybeSingle();
   if (error) {
@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
 
   const reference = `${ref}-${attempt}`;
   const amountKobo = b.amount_due * 100;
-  const apartment = findApartment(b.apartment_id);
+  const rooms = (b.booking_rooms ?? [])
+    .map((r: { apartment_id: number }) => findApartment(r.apartment_id)?.name ?? String(r.apartment_id))
+    .join(', ');
 
   let init;
   try {
@@ -70,12 +72,12 @@ Deno.serve(async (req) => {
       reference,
       metadata: {
         booking_ref: ref,
-        apartment: apartment?.name ?? String(b.apartment_id),
+        rooms,
         check_in: b.check_in,
         check_out: b.check_out,
         custom_fields: [
           { display_name: 'Booking', variable_name: 'booking_ref', value: ref },
-          { display_name: 'Apartment', variable_name: 'apartment', value: apartment?.name ?? '' },
+          { display_name: 'Rooms', variable_name: 'rooms', value: rooms },
           { display_name: 'Stay', variable_name: 'stay', value: `${b.check_in} → ${b.check_out}` },
         ],
       },

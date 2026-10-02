@@ -1,7 +1,8 @@
 import type { BookingState } from '../types';
-import { APARTMENTS, findApartment } from '../data/apartments';
+import { findApartment, useApartments, usePricing } from '../data/apartments';
 import { bedroomsLabel, fmt, nightsLabel } from '../lib/format';
-import { priceBreakdown } from '../lib/pricing';
+import { MIN_ROOMS, roomStayTotal } from '../lib/pricing';
+import { daysBetween } from '../lib/format';
 import { monthCells, monthLabel, WEEKDAYS } from '../lib/calendar';
 import { dayStatus, isAvailable } from '../lib/occupancy';
 import { useStore } from '../lib/store';
@@ -33,9 +34,14 @@ export function ApartmentDetail({
   onBackToList,
   onReserve,
 }: Props) {
-  const apt = findApartment(apartmentId) ?? APARTMENTS[0];
-  const breakdown = priceBreakdown(apt, booking.checkIn, booking.checkOut);
-  const related = APARTMENTS.filter((a) => a.id !== apt.id).slice(0, 3);
+  const apartments = useApartments();
+  const pricing = usePricing();
+  const apt = findApartment(apartmentId, apartments) ?? apartments[0];
+  const nights = daysBetween(booking.checkIn, booking.checkOut);
+  const tooShort = nights > 0 && nights < apt.minStay;
+  const roomTotal = nights > 0 && !tooShort ? roomStayTotal(apt, booking.checkIn, booking.checkOut) : 0;
+  const alsoChosen = booking.apartmentIds.filter((id) => id !== apt.id).length;
+  const related = apartments.filter((a) => a.id !== apt.id).slice(0, 3);
   const { holds, blocks } = useStore();
   const cells = monthCells((iso) => dayStatus(apt.id, iso, holds, blocks));
   const datesFree = isAvailable(apt.id, booking.checkIn, booking.checkOut, holds, blocks);
@@ -310,7 +316,7 @@ export function ApartmentDetail({
               </div>
             </div>
 
-            {breakdown.valid && (
+            {roomTotal > 0 && (
               <div
                 style={{
                   borderTop: `1px solid ${c.hairline}`,
@@ -322,35 +328,26 @@ export function ApartmentDetail({
                   fontSize: 13.5,
                 }}
               >
-                <LineItem
-                  label={`${breakdown.standardNights} standard night(s)`}
-                  value={fmt(breakdown.standardTotal)}
-                />
-                {breakdown.hasWeekend && (
-                  <LineItem
-                    label={`${breakdown.weekendNights} weekend night(s)`}
-                    value={fmt(breakdown.weekendTotal)}
-                  />
-                )}
-                <LineItem label="Cleaning fee" value={fmt(breakdown.cleaning)} />
-                <LineItem label="Security deposit (refundable)" value={fmt(breakdown.deposit)} />
                 <div
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     fontWeight: 700,
                     color: c.navy,
-                    borderTop: `1px solid ${c.hairline}`,
-                    paddingTop: 8,
-                    marginTop: 4,
                   }}
                 >
-                  <span>Total</span>
-                  <span>{fmt(breakdown.total)}</span>
+                  <span>{apt.name} · {nightsLabel(nights)}</span>
+                  <span>{fmt(roomTotal)}</span>
                 </div>
               </div>
             )}
-            {!breakdown.valid && breakdown.tooShort && (
+            <p style={{ fontSize: 12.5, color: c.faint, margin: '0 0 14px', lineHeight: 1.55 }}>
+              Bookings are for a minimum of {MIN_ROOMS} rooms
+              {alsoChosen > 0 ? ` (you have ${alsoChosen} other room${alsoChosen === 1 ? '' : 's'} chosen)` : ''}.{' '}
+              {pricing.taxRate}% tax on the room total and a refundable {fmt(pricing.cautionDeposit)} caution deposit are
+              added at payment.
+            </p>
+            {tooShort && (
               <p style={{ fontSize: 12.5, color: c.danger, margin: '0 0 14px' }}>
                 Minimum stay is {nightsLabel(apt.minStay)}.
               </p>
@@ -378,7 +375,7 @@ export function ApartmentDetail({
                 marginBottom: 10,
               }}
             >
-              Reserve Now
+              {booking.apartmentIds.includes(apt.id) ? 'Continue Booking' : 'Add Room & Continue'}
             </button>
             <a
               href={CONTACT.whatsapp}
@@ -449,15 +446,6 @@ function Policy({ title, value }: { title: string; value: string }) {
         {title}
       </p>
       <p style={{ fontSize: 14, color: c.navy, margin: 0 }}>{value}</p>
-    </div>
-  );
-}
-
-function LineItem({ label: text, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', color: c.body }}>
-      <span>{text}</span>
-      <span>{value}</span>
     </div>
   );
 }

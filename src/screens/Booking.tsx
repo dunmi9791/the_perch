@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { BookingState, GuestDetails, PaymentMethod } from '../types';
-import { APARTMENTS, findApartment } from '../data/apartments';
+import type { Apartment, BookingState, GuestDetails, PaymentMethod } from '../types';
+import { findApartment, useApartments, usePricing } from '../data/apartments';
 import { BANK_DETAILS, PAYMENT_OPTIONS } from '../data/content';
 import { bedroomsLabel, daysBetween, fmt, nightsLabel } from '../lib/format';
-import { priceBreakdown } from '../lib/pricing';
+import { MIN_ROOMS, priceBreakdown, roomStayTotal } from '../lib/pricing';
 import { isAvailable, todayIso } from '../lib/occupancy';
-import { fitsCapacity, guestError, stayError, totalGuests } from '../lib/validation';
+import { fitsCapacity, guestError, roomCapacity, stayError, totalGuests } from '../lib/validation';
 import { arrivalPaymentAllowed } from '@shared/booking-input.ts';
 import { useStore } from '../lib/store';
 import { btnGhost, btnPrimary, c, CONTACT, field, label, serif } from '../theme';
@@ -30,6 +30,9 @@ const PHASE_LABEL: Record<Exclude<PaymentPhase, 'idle'>, string> = {
   paying: 'Complete the payment in the Paystack window…',
   verifying: 'Confirming your payment…',
 };
+
+const DEPOSIT_NOTE = (deposit: number) =>
+  `The ${fmt(deposit)} caution deposit is refunded 24–48 hours after checkout, provided there is no damage to the property.`;
 
 const CHANNEL_LABEL: Record<string, string> = {
   card: 'Card',
@@ -56,7 +59,7 @@ interface Props {
 
 const STEPS = [
   { n: 1, label: 'Dates' },
-  { n: 2, label: 'Apartment' },
+  { n: 2, label: 'Rooms' },
   { n: 3, label: 'Guest Info' },
   { n: 4, label: 'Payment' },
   { n: 5, label: 'Confirmation' },
@@ -99,8 +102,10 @@ export function Booking({
 }: Props) {
   const submitting = phase !== 'idle';
   const nights = daysBetween(booking.checkIn, booking.checkOut);
-  const selectedApt = findApartment(booking.apartmentId);
-  const breakdown = priceBreakdown(selectedApt, booking.checkIn, booking.checkOut);
+  const apartments = useApartments();
+  const pricing = usePricing();
+  const selectedApts = booking.apartmentIds.map((id) => findApartment(id, apartments)).filter((a): a is Apartment => Boolean(a));
+  const breakdown = priceBreakdown(selectedApts, booking.checkIn, booking.checkOut, pricing);
 
   // The shared validator is the same one App.tsx runs before recording the booking.
   const stayProblem = stayError(booking.checkIn, booking.checkOut);
@@ -114,12 +119,26 @@ export function Booking({
   const { holds, blocks } = useStore();
   const partySize = totalGuests(booking.adults, booking.children);
   const aptFree = (id: number) => isAvailable(id, booking.checkIn, booking.checkOut, holds, blocks);
-  /** A room can be chosen only if it is free for the dates and big enough for the party. */
-  const aptSelectable = (id: number) => {
-    const apt = findApartment(id);
-    return Boolean(apt) && aptFree(id) && fitsCapacity(apt!, booking.adults, booking.children);
-  };
-  const selectionValid = booking.apartmentId !== null && aptSelectable(booking.apartmentId);
+  const allFree = selectedApts.every((a) => aptFree(a.id));
+  const capacity = roomCapacity(selectedApts);
+  const enoughRooms = selectedApts.length >= MIN_ROOMS;
+  const fits = fitsCapacity(selectedApts, booking.adults, booking.children);
+  const selectionValid = enoughRooms && allFree && fits;
+  /** What still stops the guest leaving the room step, or null when nothing does. */
+  const selectionProblem = !allFree
+    ? 'One of your rooms is no longer available for these dates. Remove it and pick another.'
+    : !enoughRooms
+      ? `Bookings are for a minimum of ${MIN_ROOMS} rooms. Choose ${MIN_ROOMS - selectedApts.length} more.`
+      : !fits
+        ? `These rooms sleep up to ${capacity} guests — add another room for your party of ${partySize}.`
+        : null;
+  const toggleRoom = (id: number) =>
+    onBookingChange({
+      apartmentIds: booking.apartmentIds.includes(id)
+        ? booking.apartmentIds.filter((x) => x !== id)
+        : [...booking.apartmentIds, id],
+    });
+  const roomNames = selectedApts.map((a) => a.name).join(', ');
   const isTransfer = booking.payment === 'transfer';
   const isPaystack = booking.payment === 'paystack';
   const arrivalAllowed = arrivalPaymentAllowed(booking.checkIn, todayIso());
@@ -296,39 +315,33 @@ export function Booking({
         </div>
       )}
 
-      {/* STEP 2 — APARTMENT */}
+      {/* STEP 2 — ROOMS */}
       {booking.step === 2 && (
         <div>
-          <h2 style={stepHeading}>Select Your Apartment</h2>
+          <h2 style={stepHeading}>Select Your Rooms</h2>
           <p style={{ fontSize: 13, color: c.faint, margin: '-12px 0 20px' }}>
-            {partySize} guest{partySize === 1 ? '' : 's'} · {nightsLabel(nights)}. Rooms that are
-            full or too small for your party are greyed out.
+            {partySize} guest{partySize === 1 ? '' : 's'} · {nightsLabel(nights)}. Bookings are for a minimum of{' '}
+            {MIN_ROOMS} rooms. Rooms that are taken for your dates are greyed out.
           </p>
           <div
-            role="radiogroup"
-            aria-label="Apartment"
-            style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}
+            role="group"
+            aria-label="Rooms"
+            style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}
           >
-            {APARTMENTS.map((apt) => {
-              const bd = priceBreakdown(apt, booking.checkIn, booking.checkOut);
-              const stayTotal = bd.valid ? bd.stayOnlyTotal : apt.nightly * Math.max(nights, 1);
+            {apartments.map((apt) => {
+              const stayTotal = nights > 0 ? roomStayTotal(apt, booking.checkIn, booking.checkOut) : apt.nightly;
               const free = aptFree(apt.id);
-              const fits = fitsCapacity(apt, booking.adults, booking.children);
-              const selectable = free && fits;
-              const selected = booking.apartmentId === apt.id;
-              const blocker = !free
-                ? 'Not available for these dates'
-                : !fits
-                  ? `Sleeps up to ${apt.maxGuests} — too small for ${partySize} guests`
-                  : null;
+              const selected = booking.apartmentIds.includes(apt.id);
+              // A room taken since it was picked stays clickable so the guest can remove it.
+              const selectable = free || selected;
               return (
                 <button
                   key={apt.id}
                   type="button"
-                  role="radio"
+                  role="checkbox"
                   aria-checked={selected}
                   disabled={!selectable}
-                  onClick={() => onBookingChange({ apartmentId: apt.id })}
+                  onClick={() => toggleRoom(apt.id)}
                   style={{
                     display: 'flex',
                     flexWrap: 'wrap',
@@ -342,10 +355,26 @@ export function Booking({
                     borderRadius: 10,
                     padding: 16,
                     cursor: selectable ? 'pointer' : 'not-allowed',
-                    opacity: selectable ? 1 : 0.5,
+                    opacity: free ? 1 : 0.5,
                     alignItems: 'center',
                   }}
                 >
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      flex: '0 0 20px',
+                      borderRadius: 4,
+                      border: `2px solid ${selected ? c.gold : '#C7CDD1'}`,
+                      background: selected ? c.gold : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {selected && <CheckIcon size={12} color={c.white} width={3} />}
+                  </div>
                   <div
                     style={{ width: 120, height: 80, flex: '0 0 120px', borderRadius: 6, overflow: 'hidden' }}
                   >
@@ -356,11 +385,11 @@ export function Booking({
                       {apt.name}
                     </p>
                     <p style={{ fontSize: 12.5, color: c.faint, margin: 0 }}>
-                      {apt.maxGuests} Guests · {bedroomsLabel(apt.bedrooms)} · {nights} nights
+                      Sleeps {apt.maxGuests} · {bedroomsLabel(apt.bedrooms)} · {nightsLabel(nights)}
                     </p>
-                    {blocker && (
+                    {!free && (
                       <p style={{ fontSize: 12, color: c.danger, fontWeight: 600, margin: '4px 0 0' }}>
-                        {blocker}
+                        Not available for these dates
                       </p>
                     )}
                   </div>
@@ -376,13 +405,23 @@ export function Booking({
                     >
                       {fmt(stayTotal)}
                     </p>
-                    <p style={{ fontSize: 11, color: c.faint, margin: 0 }}>total, before fees</p>
+                    <p style={{ fontSize: 11, color: c.faint, margin: 0 }}>
+                      {nights > 0 ? 'for your stay, before tax' : 'per night'}
+                    </p>
                   </div>
                 </button>
               );
             })}
           </div>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <p style={{ fontSize: 13.5, color: c.navy, margin: '0 0 6px' }}>
+            {selectedApts.length === 0
+              ? 'No rooms selected yet.'
+              : `${selectedApts.length} room${selectedApts.length === 1 ? '' : 's'} selected: ${roomNames} · sleeps ${capacity}`}
+          </p>
+          {selectionProblem && selectedApts.length > 0 && (
+            <p style={{ fontSize: 13, color: c.danger, margin: '0 0 20px' }}>{selectionProblem}</p>
+          )}
+          <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
             <button onClick={() => goTo(1)} style={btnGhost}>
               Back
             </button>
@@ -499,7 +538,7 @@ export function Booking({
           </div>
           <div style={{ flex: 1, minWidth: 260 }}>
             <BookingSummary
-              apartment={selectedApt}
+              apartments={selectedApts}
               breakdown={breakdown}
               checkIn={booking.checkIn}
               checkOut={booking.checkOut}
@@ -569,10 +608,7 @@ export function Booking({
                   You will pay <strong>{fmt(dueNow)}</strong> now through Paystack — by card, bank transfer or USSD —
                   and your booking is confirmed the moment it goes through.
                 </p>
-                <p style={{ margin: 0 }}>
-                  The refundable deposit of <strong>{fmt(breakdown.deposit)}</strong> is collected at check-in and
-                  returned after checkout.
-                </p>
+                <p style={{ margin: 0 }}>{DEPOSIT_NOTE(breakdown.deposit)}</p>
               </div>
             )}
 
@@ -589,7 +625,7 @@ export function Booking({
                 </p>
                 <p style={{ margin: '0 0 4px' }}>
                   <strong>Amount:</strong> {breakdown.valid ? fmt(dueNow) : '—'}
-                  {breakdown.valid && ` (the ${fmt(breakdown.deposit)} deposit is collected at check-in)`}
+                  {breakdown.valid && ` (includes the ${fmt(breakdown.deposit)} refundable caution deposit)`}
                 </p>
                 <p style={{ margin: 0 }}>
                   Use your booking reference as the transfer narration. Your reservation shows as “Awaiting
@@ -626,7 +662,7 @@ export function Booking({
           </div>
           <div style={{ flex: 1, minWidth: 260 }}>
             <BookingSummary
-              apartment={selectedApt}
+              apartments={selectedApts}
               breakdown={breakdown}
               checkIn={booking.checkIn}
               checkOut={booking.checkOut}
@@ -687,7 +723,7 @@ export function Booking({
               gap: 6,
             }}
           >
-            <ConfirmRow label="Apartment" value={selectedApt?.name ?? '—'} />
+            <ConfirmRow label={selectedApts.length === 1 ? 'Room' : 'Rooms'} value={roomNames || '—'} />
             <ConfirmRow label="Check-in" value={booking.checkIn || '—'} />
             <ConfirmRow label="Check-out" value={booking.checkOut || '—'} />
             {receipt ? (
@@ -699,11 +735,15 @@ export function Booking({
                 />
               </>
             ) : (
-              <ConfirmRow label="Due before arrival" value={breakdown.valid ? fmt(breakdown.dueOnline) : '—'} />
+              <ConfirmRow label="Amount due" value={breakdown.valid ? fmt(breakdown.dueOnline) : '—'} />
             )}
-            <ConfirmRow label="Deposit at check-in" value={breakdown.valid ? fmt(breakdown.deposit) : '—'} />
-            <ConfirmRow label="Total" value={breakdown.valid ? fmt(breakdown.total) : '—'} />
+            <ConfirmRow label="Caution deposit (refundable)" value={breakdown.valid ? fmt(breakdown.deposit) : '—'} />
           </div>
+          {breakdown.valid && (
+            <p style={{ fontSize: 12.5, color: c.faint, maxWidth: 420, margin: '-16px auto 24px' }}>
+              {DEPOSIT_NOTE(breakdown.deposit)}
+            </p>
+          )}
           <p style={{ fontSize: 13, color: c.faint, margin: '0 0 28px' }}>
             {receipt
               ? `Paystack has emailed a receipt to ${booking.guest.email || 'your email address'}. Check-in instructions will follow before your arrival.`
@@ -714,7 +754,7 @@ export function Booking({
               Download Confirmation
             </button>
             <a
-              href={calendarLink(booking, selectedApt?.name)}
+              href={calendarLink(booking, roomNames)}
               download={`the-perch-${bookingRef ?? 'booking'}.ics`}
               style={{ ...btnGhost, padding: '12px 24px', fontSize: 13.5, display: 'inline-block' }}
             >
@@ -763,14 +803,14 @@ function ConfirmRow({ label: text, value }: { label: string; value: string }) {
 }
 
 /** Minimal all-day VEVENT so "Add to Calendar" produces a real .ics download. */
-function calendarLink(booking: BookingState, aptName: string | undefined): string {
+function calendarLink(booking: BookingState, aptNames: string): string {
   const stamp = (d: string) => d.replace(/-/g, '');
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//The Perch//Booking//EN',
     'BEGIN:VEVENT',
-    `SUMMARY:Stay at The Perch — ${aptName ?? 'Apartment'}`,
+    `SUMMARY:Stay at The Perch — ${aptNames || 'Rooms'}`,
     `DTSTART;VALUE=DATE:${stamp(booking.checkIn)}`,
     `DTEND;VALUE=DATE:${stamp(booking.checkOut)}`,
     `LOCATION:${CONTACT.address}`,

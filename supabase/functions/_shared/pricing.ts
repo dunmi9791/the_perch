@@ -1,44 +1,64 @@
-import type { Apartment, PriceBreakdown } from './types.ts';
+import type { Apartment, PriceBreakdown, PricingSettings } from './types.ts';
 import { dateList, daysBetween } from './dates.ts';
 
 /** Friday and Saturday nights bill at the weekend rate. */
 const WEEKEND_DAYS = new Set([5, 6]);
 
+/**
+ * Tax and deposit as of October 2026. Like the room rates in apartments.ts,
+ * these are only a fallback for the site until the live values load from
+ * `pricing_settings`; staff edit those, and the server never prices from
+ * these.
+ */
+export const DEFAULT_PRICING: PricingSettings = { taxRate: 7.5, cautionDeposit: 100000 };
+
+/** A website booking takes at least this many rooms. */
+export const MIN_ROOMS = 2;
+
+/** Nightly charges for one room over [checkIn, checkOut), before tax. */
+export function roomStayTotal(apt: Apartment, checkIn: string, checkOut: string): number {
+  let total = 0;
+  for (const d of dateList(checkIn, checkOut)) {
+    total += WEEKEND_DAYS.has(d.getDay()) ? apt.weekend : apt.nightly;
+  }
+  return total;
+}
+
+/**
+ * Prices a stay across one or more rooms for the same dates. Tax is charged
+ * on the room subtotal; the caution deposit is added once and is due with
+ * everything else at payment.
+ */
 export function priceBreakdown(
-  apt: Apartment | undefined,
+  apts: (Apartment | undefined)[],
   checkIn: string,
   checkOut: string,
+  pricing: PricingSettings,
 ): PriceBreakdown {
-  if (!apt) return { valid: false, tooShort: false };
+  const rooms = apts.filter((a): a is Apartment => Boolean(a));
+  if (rooms.length === 0 || rooms.length !== apts.length) return { valid: false, tooShort: false };
 
   const nights = daysBetween(checkIn, checkOut);
   if (nights <= 0) return { valid: false, tooShort: false };
-  if (nights < apt.minStay) return { valid: false, tooShort: true };
+  const minStay = Math.max(...rooms.map((a) => a.minStay));
+  if (nights < minStay) return { valid: false, tooShort: true };
 
-  let weekendNights = 0;
-  let standardNights = 0;
-  for (const d of dateList(checkIn, checkOut)) {
-    if (WEEKEND_DAYS.has(d.getDay())) weekendNights++;
-    else standardNights++;
-  }
-
-  const standardTotal = standardNights * apt.nightly;
-  const weekendTotal = weekendNights * apt.weekend;
-  const stayOnlyTotal = standardTotal + weekendTotal;
+  const lines = rooms.map((apartment) => ({ apartment, total: roomStayTotal(apartment, checkIn, checkOut) }));
+  const subtotal = lines.reduce((s, l) => s + l.total, 0);
+  const tax = Math.round((subtotal * pricing.taxRate) / 100);
+  const deposit = pricing.cautionDeposit;
+  const total = subtotal + tax + deposit;
 
   return {
     valid: true,
     tooShort: false,
     nights,
-    standardNights,
-    weekendNights,
-    hasWeekend: weekendNights > 0,
-    standardTotal,
-    weekendTotal,
-    stayOnlyTotal,
-    cleaning: apt.cleaning,
-    deposit: apt.deposit,
-    dueOnline: stayOnlyTotal + apt.cleaning,
-    total: stayOnlyTotal + apt.cleaning + apt.deposit,
+    lines,
+    subtotal,
+    taxRate: pricing.taxRate,
+    tax,
+    deposit,
+    dueOnline: total,
+    total,
   };
 }

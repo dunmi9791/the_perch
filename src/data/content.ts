@@ -1,4 +1,5 @@
-import type { GalleryImage } from '../types';
+import type { GalleryImage, PricingSettings } from '../types';
+import { fmt } from '../lib/format';
 
 export type WhyStayIcon = 'shield' | 'bolt' | 'wifi' | 'pin' | 'sparkle' | 'chat';
 
@@ -175,18 +176,23 @@ export const GALLERY_CATEGORIES = [
   { key: 'surroundings', label: 'Surroundings' },
 ];
 
-export const FAQS = [
+/** FAQs; the deposit and tax answers quote the live values. */
+export const faqs = (pricing: PricingSettings) => [
   {
     q: 'What time is check-in and check-out?',
     a: 'Check-in is from 2:00 PM and check-out is by 11:00 AM. Early check-in or late check-out may be arranged in advance, subject to availability.',
   },
   {
-    q: 'Is a security deposit required?',
-    a: 'Yes, a refundable security deposit is required for most apartments and is returned after a satisfactory check-out inspection.',
+    q: 'Is a caution deposit required?',
+    a: `Yes. A refundable caution deposit of ${fmt(pricing.cautionDeposit)} is paid with your booking and refunded 24–48 hours after checkout, provided no damage was done to the property.`,
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept Paystack, Flutterwave, bank transfer, and pay-on-arrival where enabled for your booking.',
+    a: `We accept card, bank transfer and USSD through Paystack, direct bank transfer, and pay-on-arrival for stays booked at least 48 hours ahead. A ${pricing.taxRate}% tax applies to the room total.`,
+  },
+  {
+    q: 'Can I book a single room?',
+    a: 'Bookings are for a minimum of 2 rooms. Choose your rooms together on the booking page; they share the same dates.',
   },
   {
     q: 'Can I cancel or change my booking?',

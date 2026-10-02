@@ -11,6 +11,9 @@ export type {
   PaymentMethod,
   PaymentStatus,
   PriceBreakdown,
+  PricingSettings,
+  RateChange,
+  RoomRate,
   StayHold,
 } from '@shared/types.ts';
 
@@ -31,7 +34,8 @@ export interface BookingState {
   checkOut: string;
   adults: string;
   children: string;
-  apartmentId: number | null;
+  /** Rooms chosen for the stay, in the order picked. */
+  apartmentIds: number[];
   guest: GuestDetails;
   payment: PaymentMethod;
 }

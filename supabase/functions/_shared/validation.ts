@@ -13,8 +13,14 @@ export function totalGuests(adults: string | number, children: string | number):
   return Math.max(1, Number(adults) || 0) + Math.max(0, Number(children) || 0);
 }
 
-export function fitsCapacity(apt: Apartment, adults: string | number, children: string | number): boolean {
-  return totalGuests(adults, children) <= apt.maxGuests;
+/** Beds across every chosen room. */
+export function roomCapacity(apts: Apartment[]): number {
+  return apts.reduce((s, a) => s + a.maxGuests, 0);
+}
+
+/** Whether the chosen rooms between them sleep the whole party. */
+export function fitsCapacity(apts: Apartment[], adults: string | number, children: string | number): boolean {
+  return totalGuests(adults, children) <= roomCapacity(apts);
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
