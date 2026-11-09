@@ -189,7 +189,7 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
                 </div>
                 {validRange && (
                   <span style={{ fontSize: 12, color: c.body }}>
-                    {fmt(roomStayTotal(apt, avail.checkIn, avail.checkOut))} total, before tax
+                    {fmt(roomStayTotal(apt, avail.checkIn, avail.checkOut))} total, tax inclusive
                   </span>
                 )}
                 <button

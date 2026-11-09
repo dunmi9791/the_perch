@@ -188,7 +188,7 @@ export const faqs = (pricing: PricingSettings) => [
   },
   {
     q: 'What payment methods do you accept?',
-    a: `We accept card, bank transfer and USSD through Paystack, direct bank transfer, and pay-on-arrival for stays booked at least 48 hours ahead. A ${pricing.taxRate}% tax applies to the room total.`,
+    a: `We accept card, bank transfer and USSD through Paystack, direct bank transfer, and pay-on-arrival for stays booked at least 48 hours ahead. Room rates are tax inclusive, so the ${pricing.taxRate}% tax is already in the rate you see.`,
   },
   {
     q: 'Can I book a single room?',
@@ -211,7 +211,7 @@ export const PAYMENT_OPTIONS = [
 ] as const;
 
 export const BANK_DETAILS = {
-  bank: 'Sample Bank Plc',
-  accountName: 'The Perch Apartments Ltd',
-  accountNumber: '0123456789',
+  bank: 'Paystack-Titan',
+  accountName: 'THEPERCH/The Perch',
+  accountNumber: '9740435049',
 } as const;

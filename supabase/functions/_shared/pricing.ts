@@ -5,17 +5,18 @@ import { dateList, daysBetween } from './dates.ts';
 const WEEKEND_DAYS = new Set([5, 6]);
 
 /**
- * Tax and deposit as of October 2026. Like the room rates in apartments.ts,
- * these are only a fallback for the site until the live values load from
- * `pricing_settings`; staff edit those, and the server never prices from
- * these.
+ * Tax and deposit as of October 2026. The rate card is tax inclusive, so the
+ * tax rate only says how much of a room's rate is tax — it is never added on
+ * top. Like the room rates in apartments.ts, these are only a fallback for the
+ * site until the live values load from `pricing_settings`; staff edit those,
+ * and the server never prices from these.
  */
 export const DEFAULT_PRICING: PricingSettings = { taxRate: 7.5, cautionDeposit: 100000 };
 
 /** A website booking takes at least this many rooms. */
 export const MIN_ROOMS = 2;
 
-/** Nightly charges for one room over [checkIn, checkOut), before tax. */
+/** Nightly charges for one room over [checkIn, checkOut). Rates are tax inclusive. */
 export function roomStayTotal(apt: Apartment, checkIn: string, checkOut: string): number {
   let total = 0;
   for (const d of dateList(checkIn, checkOut)) {
@@ -25,9 +26,10 @@ export function roomStayTotal(apt: Apartment, checkIn: string, checkOut: string)
 }
 
 /**
- * Prices a stay across one or more rooms for the same dates. Tax is charged
- * on the room subtotal; the caution deposit is added once and is due with
- * everything else at payment.
+ * Prices a stay across one or more rooms for the same dates. The rates are
+ * tax inclusive, so `tax` is the part of the room subtotal that is tax, not an
+ * extra charge: the subtotal already contains it. The caution deposit is added
+ * once and is due with everything else at payment.
  */
 export function priceBreakdown(
   apts: (Apartment | undefined)[],
@@ -45,9 +47,10 @@ export function priceBreakdown(
 
   const lines = rooms.map((apartment) => ({ apartment, total: roomStayTotal(apartment, checkIn, checkOut) }));
   const subtotal = lines.reduce((s, l) => s + l.total, 0);
-  const tax = Math.round((subtotal * pricing.taxRate) / 100);
+  // The rates include tax, so back it out of the subtotal instead of adding it.
+  const tax = Math.round((subtotal * pricing.taxRate) / (100 + pricing.taxRate));
   const deposit = pricing.cautionDeposit;
-  const total = subtotal + tax + deposit;
+  const total = subtotal + deposit;
 
   return {
     valid: true,

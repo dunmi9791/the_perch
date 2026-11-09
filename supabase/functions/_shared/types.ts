@@ -42,7 +42,7 @@ export interface RoomRate {
 
 /** Charges added to every booking, as stored in `pricing_settings`. */
 export interface PricingSettings {
-  /** Percent of the room subtotal, e.g. 7.5. */
+  /** Percent of a room rate that is tax, e.g. 7.5. Rates are tax inclusive. */
   taxRate: number;
   /** Refundable caution deposit in naira, once per booking. */
   cautionDeposit: number;
@@ -70,17 +70,17 @@ export type PriceBreakdown =
       valid: true;
       tooShort: false;
       nights: number;
-      /** Nightly charges for each room, before tax. */
+      /** Nightly charges for each room, tax included. */
       lines: { apartment: Apartment; total: number }[];
-      /** All rooms' nightly charges, before tax. */
+      /** All rooms' nightly charges, tax included. */
       subtotal: number;
-      /** Percent applied to the subtotal. */
+      /** Percent of the rate that is tax. */
       taxRate: number;
-      /** Tax on the subtotal. */
+      /** The part of the subtotal that is tax. Already in `subtotal`, never added to it. */
       tax: number;
       /** Refundable caution deposit, charged at payment and returned after checkout. */
       deposit: number;
-      /** What is paid at booking: subtotal, tax and deposit. */
+      /** What is paid at booking: subtotal and deposit. */
       dueOnline: number;
       /** Everything, deposit included. Equal to dueOnline. */
       total: number;
@@ -115,7 +115,7 @@ export interface BookingRecord {
   guestEmail: string;
   guestPhone: string;
   payment: PaymentMethod | 'cash' | 'other';
-  /** Everything the guest pays, in naira: rooms, tax and caution deposit. */
+  /** Everything the guest pays, in naira: rooms (tax included) and the caution deposit. */
   total: number;
   /** Refundable caution deposit in naira. Part of `total`. */
   deposit: number;

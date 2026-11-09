@@ -881,7 +881,7 @@ function OfflineBookingForm({ onDone }: { onDone: () => void }) {
           />
           {suggested > 0 && (
             <span style={{ fontSize: 11, color: c.faint, marginTop: 4 }}>
-              Rate card: {fmt(suggested)} incl. tax and {fmt(pricing.cautionDeposit)} deposit
+              Rate card: {fmt(suggested)} incl. tax and the {fmt(pricing.cautionDeposit)} deposit
             </span>
           )}
         </div>
@@ -1502,7 +1502,7 @@ function RateHistory({ history }: { history: RateChange[] }) {
   );
 }
 
-/** Tax rate and caution deposit, which apply to every booking. */
+/** Tax rate (included in the rates) and caution deposit, which apply to every booking. */
 function PricingSettingsPanel() {
   const { pricing: live } = useStore();
   const current = usePricing();
@@ -1566,8 +1566,8 @@ function PricingSettingsPanel() {
         <div>
           <h3 style={{ ...sectionH3, margin: '0 0 4px' }}>Tax &amp; caution deposit</h3>
           <p style={{ fontSize: 12.5, color: c.faint, margin: 0 }}>
-            Added to every booking at payment. Tax is charged on the room subtotal; the deposit is charged once per
-            booking and refunded 24–48 hours after checkout if there is no damage.
+            Room rates are tax inclusive, so the tax rate only says how much of a rate is tax — it is never added on
+            top. The deposit is charged once per booking and refunded 24–48 hours after checkout if there is no damage.
           </p>
         </div>
         {!editing && (

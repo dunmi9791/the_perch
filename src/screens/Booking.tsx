@@ -406,7 +406,7 @@ export function Booking({
                       {fmt(stayTotal)}
                     </p>
                     <p style={{ fontSize: 11, color: c.faint, margin: 0 }}>
-                      {nights > 0 ? 'for your stay, before tax' : 'per night'}
+                      {nights > 0 ? 'for your stay, tax inclusive' : 'per night'}
                     </p>
                   </div>
                 </button>

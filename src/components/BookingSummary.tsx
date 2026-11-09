@@ -63,11 +63,11 @@ export function BookingSummary({ apartments, breakdown, checkIn, checkOut }: Pro
             </div>
           ))}
           <div style={{ ...row, color: c.navy }}>
-            <span>Subtotal</span>
+            <span>Subtotal (tax inclusive)</span>
             <span>{fmt(breakdown.subtotal)}</span>
           </div>
-          <div style={row}>
-            <span>Tax ({breakdown.taxRate}%)</span>
+          <div style={{ ...row, color: c.faint, fontSize: 12.5, paddingLeft: 10 }}>
+            <span>includes {breakdown.taxRate}% tax</span>
             <span>{fmt(breakdown.tax)}</span>
           </div>
           <div style={row}>
@@ -88,7 +88,8 @@ export function BookingSummary({ apartments, breakdown, checkIn, checkOut }: Pro
             <span>{fmt(breakdown.dueOnline)}</span>
           </div>
           <p style={{ fontSize: 12, color: c.faint, margin: '4px 0 0', lineHeight: 1.5 }}>
-            The caution deposit is refunded 24–48 hours after checkout, provided there is no damage to the property.
+            Room rates include tax. The caution deposit is refunded 24–48 hours after checkout, provided there is no
+            damage to the property.
           </p>
         </div>
       )}

@@ -344,8 +344,8 @@ export function ApartmentDetail({
             <p style={{ fontSize: 12.5, color: c.faint, margin: '0 0 14px', lineHeight: 1.55 }}>
               Bookings are for a minimum of {MIN_ROOMS} rooms
               {alsoChosen > 0 ? ` (you have ${alsoChosen} other room${alsoChosen === 1 ? '' : 's'} chosen)` : ''}.{' '}
-              {pricing.taxRate}% tax on the room total and a refundable {fmt(pricing.cautionDeposit)} caution deposit are
-              added at payment.
+              Rates include {pricing.taxRate}% tax; a refundable {fmt(pricing.cautionDeposit)} caution deposit is added
+              at payment.
             </p>
             {tooShort && (
               <p style={{ fontSize: 12.5, color: c.danger, margin: '0 0 14px' }}>
