@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import type { AvailabilityState } from '../types';
 import { useApartments } from '../data/apartments';
-import { bedroomsLabel, fmt } from '../lib/format';
+import { bedroomsLabel, dateRangeLabel, daysBetween, fmt, nightsLabel } from '../lib/format';
 import { MIN_ROOMS, roomStayTotal } from '../lib/pricing';
 import { isAvailable } from '../lib/occupancy';
 import { useStore } from '../lib/store';
@@ -18,6 +19,19 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
     Boolean(avail.checkIn && avail.checkOut) && new Date(avail.checkOut) <= new Date(avail.checkIn);
   const error = rangeReversed ? 'Check-out date must be after check-in date.' : null;
   const validRange = Boolean(avail.checkIn && avail.checkOut) && !error;
+
+  // Most guests arrive here having already chosen dates on the home page, so
+  // the picker starts folded away behind a summary of what they picked and
+  // only opens when there is nothing to show or they ask to change it.
+  const [editing, setEditing] = useState(false);
+  const showPicker = !validRange || editing;
+
+  const guestsLabel = [
+    `${avail.adults} adult${avail.adults === '1' ? '' : 's'}`,
+    avail.children !== '0' ? `${avail.children} child${avail.children === '1' ? '' : 'ren'}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const { holds, blocks } = useStore();
   // Parties spread across rooms (minimum MIN_ROOMS per booking), so every free room is a candidate.
@@ -37,8 +51,52 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px 90px' }}>
       <p style={{ ...eyebrow, margin: '0 0 10px' }}>Check Availability</p>
-      <h1 style={{ ...pageTitle, margin: '0 0 32px' }}>When would you like to stay?</h1>
+      <h1 style={{ ...pageTitle, margin: '0 0 28px' }}>
+        {validRange && !editing ? 'Rooms free for your stay' : 'When would you like to stay?'}
+      </h1>
 
+      {!showPicker && (
+        <div
+          style={{
+            background: c.cream,
+            borderRadius: 8,
+            padding: '16px 20px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <p style={{ ...label, marginBottom: 3 }}>Your stay</p>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: c.navy }}>
+              {dateRangeLabel(avail.checkIn, avail.checkOut)}
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 13, color: c.bodyMuted }}>
+              {nightsLabel(daysBetween(avail.checkIn, avail.checkOut))} · {guestsLabel}
+            </p>
+          </div>
+          <button
+            onClick={() => setEditing(true)}
+            style={{
+              background: 'none',
+              border: `1px solid ${c.border}`,
+              borderRadius: 4,
+              padding: '9px 18px',
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: c.navy,
+              cursor: 'pointer',
+            }}
+          >
+            Change dates
+          </button>
+        </div>
+      )}
+
+      {showPicker && (
       <div
         style={{
           background: c.cream,
@@ -109,14 +167,35 @@ export function Availability({ avail, onAvailChange, onSelectApartment }: Props)
             ))}
           </select>
         </div>
+        {editing && validRange && (
+          <button
+            onClick={() => setEditing(false)}
+            style={{
+              background: c.navy,
+              color: c.white,
+              border: 'none',
+              borderRadius: 4,
+              padding: '11px 22px',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              flex: '0 0 auto',
+            }}
+          >
+            Done
+          </button>
+        )}
       </div>
+      )}
 
       {error && <p style={{ color: c.danger, fontSize: 13, margin: '0 0 20px' }}>{error}</p>}
 
-      <p style={{ fontSize: 13.5, color: c.bodyMuted, margin: '0 0 24px' }}>{resultsLabel}</p>
+      {resultsLabel && <p style={{ fontSize: 13.5, color: c.bodyMuted, margin: '0 0 24px' }}>{resultsLabel}</p>}
 
+      {/* With a back-to-front range there is nothing to book, so the rooms stay
+          hidden rather than offering a Select button that cannot work. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {matches.map((apt) => {
+        {(error ? [] : matches).map((apt) => {
           return (
             <div
               key={apt.id}
