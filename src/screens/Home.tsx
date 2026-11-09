@@ -63,9 +63,30 @@ export function Home({ avail, onAvailChange, onNavigate, onViewApartment }: Prop
             width: '100%',
           }}
         >
-          <p style={{ ...eyebrow, fontSize: 13, margin: '0 0 16px', animation: 'fadeUp 0.6s ease' }}>
-            Slice of Paradise · Airport, Abuja
-          </p>
+          {/* The name, said plainly, before anything else: the header logo is
+              too small to carry it on the landing page. */}
+          <div style={{ margin: '0 0 20px', animation: 'fadeUp 0.5s ease' }}>
+            <p
+              style={{
+                fontFamily: serif,
+                color: c.white,
+                fontSize: 'clamp(30px,4.4vw,48px)',
+                lineHeight: 1,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                margin: 0,
+                textShadow: '0 2px 18px rgba(0,0,0,0.35)',
+              }}
+            >
+              The Perch
+            </p>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginTop: 14 }}>
+              {/* Keeps the rule beside the first line when the location wraps on a phone. */}
+              <span style={{ width: 54, height: 2, background: c.gold, flex: '0 0 auto', marginTop: 8 }} />
+              <p style={{ ...eyebrow, fontSize: 13, margin: 0 }}>Slice of Paradise · Airport, Abuja</p>
+            </div>
+          </div>
           <h1
             style={{
               fontFamily: serif,
