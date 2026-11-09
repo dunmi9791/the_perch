@@ -6,6 +6,9 @@ dist/
 # Edge function secrets for `supabase functions serve`
 supabase/functions/.env
 
+# Bundled test fixtures (npm run test:pricing rebuilds them)
+tests/.bundle/
+
 # Editor and Windows artefacts
 .idea/
 *:Zone.Identifier

@@ -119,8 +119,11 @@ runs in two places: the site uses it to show the guest a total, and the
 
 A website booking takes at least two rooms (`MIN_ROOMS`), all for the same
 dates. Each room is priced per night, with Friday and Saturday nights billed at
-the weekend rate. On top of the room subtotal come tax (7.5% at launch) and a
-refundable caution deposit (₦100,000 at launch), charged once per booking. There is no cleaning fee. Stays shorter than a room's minimum are
+the weekend rate. **Room rates are charge inclusive**: the tax rate (7.5% at
+launch) says how much of a rate is tax, and the server backs it out of the room
+subtotal as `subtotal × rate / (100 + rate)` instead of adding it on top. What
+is added is the refundable caution deposit (₦100,000 at launch), charged once
+per booking. There is no cleaning fee. Stays shorter than a room's minimum are
 rejected rather than priced.
 
 Everything is due at payment: `dueOnline` and `total` are the same figure, and
@@ -199,6 +202,21 @@ them.
 (totals, revenue, occupancy, arrivals), a bookings list with confirm/cancel, a
 form for offline bookings taken by phone or WhatsApp, a 21-day timeline, and a
 block-dates form for maintenance or owner use.
+
+## Tests
+
+`tests/` holds the checks that need neither Paystack nor the hosted project:
+the pricing and booking rules, the payment database function, and the webhook
+and `create-booking` endpoints over HTTP. 92 checks, all passing as of 9
+November 2026.
+
+```bash
+npm run test:pricing   # 26 checks, no database needed
+npm run test:db        # 38 checks, local stack, rolls itself back
+```
+
+The HTTP checks need the functions served locally; `tests/README.md` has those
+commands, and lists what still needs a Paystack test key.
 
 ## What is still mocked
 

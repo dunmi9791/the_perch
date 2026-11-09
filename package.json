@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:pricing": "esbuild supabase/functions/_shared/booking-input.ts --bundle --format=esm --platform=node --outfile=tests/.bundle/booking-input.mjs --log-level=warning && node tests/pricing.test.mjs",
+    "test:db": "docker exec -i supabase_db_the_perch psql -U postgres -d postgres -q < tests/payments.test.sql",
+    "test:create-booking": "node tests/create-booking.test.mjs",
+    "test:cleanup": "docker exec -i supabase_db_the_perch psql -U postgres -d postgres -q < tests/webhook-cleanup.sql"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
